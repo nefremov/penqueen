@@ -10,6 +10,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penqueen.Tests", "Penqueen.Tests\Penqueen.Tests.csproj", "{2E8ACDF8-EFA5-4550-8AA8-28F430C62BCA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution items", "{5975107D-CFD8-4E4A-9681-AF37CDED93F3}"
+	ProjectSection(SolutionItems) = preProject
+		..\README.md = ..\README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

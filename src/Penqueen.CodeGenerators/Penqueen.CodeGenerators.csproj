@@ -8,6 +8,21 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <!-- Generates a package at build -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <Title>Source genarators for FC Core lazy-loading proxies with queriable and encapsulated collections</Title>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/nefremov/penqueen</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/nefremov/penqueen</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>EF Core;Source generator;Proxy</PackageTags>
+    <VersionPrefix>0.0.9</VersionPrefix>
+    <Authors>Nick Efremov</Authors>
+    <IncludeSymbols>True</IncludeSymbols>
+    <PackageReleaseNotes>https://github.com/nefremov/penqueen/README.md</PackageReleaseNotes>
+    <!-- Do not include the generator as a lib dependency -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,6 +33,10 @@
 
   <ItemGroup>
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
