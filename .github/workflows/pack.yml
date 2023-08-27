@@ -4,8 +4,6 @@
 name: .NET
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
@@ -27,4 +25,4 @@ jobs:
     - name: Test
       run: dotnet test "/src/Penqueen.sln" --no-build --verbosity normal
     - name: Pack
-      run: dotnet pack "src/Penqueen.CodeGenerators/Penqueen.CodeGenerators.csproj" -c Release
+      run: dotnet pack "/src/Penqueen.CodeGenerators/Penqueen.CodeGenerators.csproj" -c Release
