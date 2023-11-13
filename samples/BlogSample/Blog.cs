@@ -1,14 +1,12 @@
-﻿namespace Penqueen.Tests.Domain.Manual
+﻿namespace Penqueen.Samples.BlogSample
 {
-    public class Blog
+    public partial class Blog
     {
 
         public virtual Guid Id { get; set; }
         public virtual string Name { get; set; }
         public virtual int? Sample { get; set; }
         public virtual ICollection<Post> Posts { get; protected set; }
-
-        protected ICollection<Post> _posts;
 
         protected Blog() { }
 
@@ -21,8 +19,10 @@
 
         public Post AddPost(Guid id, string text)
         {
-            var post = ((IPostCollection)Posts).CreateNew(id, text, this);
+            var post = ((Blog.IPostCollection)Posts).CreateNew(id, text, this);
+            _posts.Add(post);
             return post;
         }
+
     }
 }

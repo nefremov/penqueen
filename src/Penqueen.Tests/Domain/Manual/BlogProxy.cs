@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -8,7 +9,7 @@ namespace Penqueen.Tests.Domain.Manual;
 
 public class BlogProxy : Blog, INotifyPropertyChanged, INotifyPropertyChanging
 {
-    private readonly BlogContext _context;
+    private readonly DbContext _context;
     private readonly IEntityType _entityType;
     private readonly ILazyLoader _lazyLoader;
 
@@ -17,17 +18,19 @@ public class BlogProxy : Blog, INotifyPropertyChanged, INotifyPropertyChanging
         _context = context;
         _entityType = entityType;
         _lazyLoader = lazyLoader;
-        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context, context.Posts, this, _ => _.Posts,
+        _posts = new ObservableHashSet<Post>();
+        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context, this, _ => _.Posts,
             entityType, lazyLoader);
     }
 
-    public BlogProxy(Guid id, string name, int? sample, BlogContext context, IEntityType entityType, ILazyLoader lazyLoader)
+    public BlogProxy(Guid id, string name, int? sample, DbContext context, IEntityType entityType, ILazyLoader lazyLoader)
         : base(id, name, sample)
     {
         _context = context;
         _entityType = entityType;
         _lazyLoader = lazyLoader;
-        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context, context.Posts, this, _ => _.Posts,
+        _posts = new ObservableHashSet<Post>();
+        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context,  this, _ => _.Posts,
             entityType, lazyLoader);
     }
 

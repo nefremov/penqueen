@@ -1,6 +1,6 @@
-﻿namespace Penqueen.Tests.Domain.Manual
+﻿namespace Penqueen.Samples.BlogSample
 {
-    public class Post
+    public partial class Post
     {
         public virtual Guid Id { get; set; }
         public virtual string Text { get; set; }

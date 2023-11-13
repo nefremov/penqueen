@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 
 using System.ComponentModel;
+using Microsoft.EntityFrameworkCore;
 
 namespace Penqueen.Tests.Domain.Manual;
 
@@ -9,7 +10,7 @@ public class PostProxy : Post, INotifyPropertyChanged, INotifyPropertyChanging
 {
     private readonly IEntityType _entityType;
     private readonly ILazyLoader _lazyLoader;
-    private readonly BlogContext _context;
+    private readonly DbContext _context;
 
     public PostProxy(BlogContext context, IEntityType entityType, ILazyLoader lazyLoader)
     {
@@ -18,7 +19,7 @@ public class PostProxy : Post, INotifyPropertyChanged, INotifyPropertyChanging
         _lazyLoader = lazyLoader;
     }
 
-    public PostProxy(Guid id, string name, Blog blog, BlogContext context, IEntityType entityType, ILazyLoader lazyLoader)
+    public PostProxy(Guid id, string name, Blog blog, DbContext context, IEntityType entityType, ILazyLoader lazyLoader)
         : base(id, name, blog)
     {
         _context = context;

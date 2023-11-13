@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Text;
+﻿using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -10,9 +9,25 @@ namespace Penqueen.CodeGenerators;
 [Generator]
 public class ProxyGenerator : ISourceGenerator {
 
+    private static readonly DiagnosticDescriptor ReferenceRequiredDescriptor = new (
+        id: "PQ001",
+        title: "Reference required",
+        messageFormat: "Generated code requires referencing to \"{0}\" nuget package",
+        category: "ProxyGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly string[] RequiredReferences = {"Microsoft.EntityFrameworkCore", "Microsoft.EntityFrameworkCore.Proxies", "Penqueen.Collections"};
+
     public void Execute(GeneratorExecutionContext context)
     {
-        var cancellationToken = context.CancellationToken;
+        foreach (var requiredReference in RequiredReferences)
+        {
+            if (!context.Compilation.ReferencedAssemblyNames.Any(ai => ai.Name.Equals(requiredReference, StringComparison.OrdinalIgnoreCase)))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(ReferenceRequiredDescriptor, Location.None, requiredReference));
+            }
+        }
 
         var dbContextType = context.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
         var dbSetType = context.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
@@ -22,7 +37,7 @@ public class ProxyGenerator : ISourceGenerator {
             return;
         }
 
-        var targetTypeTracker = context.SyntaxContextReceiver as TargetTypeTracker;
+        var targetTypeTracker = context.SyntaxContextReceiver as ProxyGeneratorTargetTypeTracker;
         if (targetTypeTracker is null)
         {
             return;
@@ -30,26 +45,6 @@ public class ProxyGenerator : ISourceGenerator {
 
 
         var builders = DetectEntities(context, targetTypeTracker, dbContextType, dbSetType);
-
-        var collectionTypeHosts = new Dictionary<ITypeSymbol, HashSet<ITypeSymbol>>(SymbolEqualityComparer.Default);
-        foreach (var builder in builders)
-        {
-            var classGenerator = new EntityPartialClassGenerator(builder, builders);
-            var (text, collectionTypes) = classGenerator.Generate();
-            context.AddSource($"{builder.EntityType.Name}.g", SourceText.From(text, Encoding.UTF8));
-
-            foreach (ITypeSymbol collectionType in collectionTypes)
-            {
-               if (collectionTypeHosts.TryGetValue(collectionType, out var hashset))
-               {
-                    hashset.Add(builder.EntityType);
-               } 
-               else
-               {
-                   collectionTypeHosts.Add(collectionType, new HashSet<ITypeSymbol>(new[] { builder.EntityType }, SymbolEqualityComparer.Default));
-               }
-            }
-        }
 
         foreach (var builder in builders)
         {
@@ -59,26 +54,24 @@ public class ProxyGenerator : ISourceGenerator {
 
         foreach (var builder in builders)
         {
-            var generator = new CollectionClassGenerator(builder, builders, collectionTypeHosts);
+            var generator = new CollectionClassGenerator(builder);
             context.AddSource($"{builder.EntityType.Name}Collection.g", SourceText.From(generator.Generate(), Encoding.UTF8));
         }
 
         var extGenerator = new DbContextOptionsBuilderExtensionGenerator(builders);
-        context.AddSource($"ProxyExtensions.g", SourceText.From(extGenerator.Generate(), Encoding.UTF8));
+        context.AddSource("ProxyExtensions.g", SourceText.From(extGenerator.Generate(), Encoding.UTF8));
         var pfGenerator = new ProxyFactoryGenerator(builders);
-        context.AddSource($"ProxyFactories.g", SourceText.From(pfGenerator.Generate(), Encoding.UTF8));
-        var hsGenerator = new BackedObservableHashSetGenerator();
-        context.AddSource($"BackedObservableHashSet.g", SourceText.From(hsGenerator.Generate(), Encoding.UTF8));
+        context.AddSource("ProxyFactories.g", SourceText.From(pfGenerator.Generate(), Encoding.UTF8));
     }
 
     public void Initialize(GeneratorInitializationContext context) {
-        context.RegisterForSyntaxNotifications(() => new TargetTypeTracker());
+        context.RegisterForSyntaxNotifications(() => new ProxyGeneratorTargetTypeTracker());
     }
-    private static List<EntityData> DetectEntities(GeneratorExecutionContext context, TargetTypeTracker targetTypeTracker, INamedTypeSymbol dbContextType, INamedTypeSymbol dbSetType)
+    private static List<EntityData> DetectEntities(GeneratorExecutionContext context, ProxyGeneratorTargetTypeTracker proxyGeneratorTargetTypeTracker, INamedTypeSymbol dbContextType, INamedTypeSymbol dbSetType)
     {
         List<EntityData> result = new List<EntityData>();
         var symbolEqualityComparer = SymbolEqualityComparer.Default;
-        foreach (var typeNode in targetTypeTracker.TypesForProxyGeneration)
+        foreach (var typeNode in proxyGeneratorTargetTypeTracker.TypesForProxyGeneration)
         {
             // Use the semantic model to get the symbol for this type
             var semanticModel = context.Compilation.GetSemanticModel(typeNode.SyntaxTree);
@@ -94,7 +87,16 @@ public class ProxyGenerator : ISourceGenerator {
 
             foreach (var rec in dbSetProperties)
             {
-                ITypeSymbol entityType = (rec.Symbol.Type as INamedTypeSymbol).TypeArguments.First();
+                if (rec.Symbol == null)
+                {
+                    continue;
+                }
+
+                if (rec.Symbol!.Type is not INamedTypeSymbol type)
+                {
+                    continue;
+                }
+                ITypeSymbol entityType = type.TypeArguments.First();
                 result.Add(new EntityData { EntityType = entityType, DbSetName = rec.Symbol.Name, DbContext = typeNodeSymbol });
             }
         }
@@ -102,17 +104,3 @@ public class ProxyGenerator : ISourceGenerator {
         return result;
     }
 }
-
-public class TargetTypeTracker : ISyntaxContextReceiver
-{
-    public IImmutableList<TypeDeclarationSyntax> TypesForProxyGeneration = ImmutableList.Create<TypeDeclarationSyntax>();
-
-    public void OnVisitSyntaxNode(GeneratorSyntaxContext context) {
-        if (context.Node is TypeDeclarationSyntax cdecl) {
-            if (cdecl.IsDecoratedWithAttribute("GenerateProxies")) {
-                TypesForProxyGeneration = TypesForProxyGeneration.Add(cdecl);
-            }
-        }
-    }
-}
-

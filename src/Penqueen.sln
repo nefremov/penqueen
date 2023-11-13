@@ -14,6 +14,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution 
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogSample", "..\samples\BlogSample\BlogSample.csproj", "{E805EA1C-E6CE-4590-9E9E-8D842A8DC743}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Penqueen.Collections", "Penqueen.Collections\Penqueen.Collections.csproj", "{6837EFD9-7079-4CF7-B3E7-37D081879737}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +36,14 @@ Global
 		{2E8ACDF8-EFA5-4550-8AA8-28F430C62BCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E8ACDF8-EFA5-4550-8AA8-28F430C62BCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E8ACDF8-EFA5-4550-8AA8-28F430C62BCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E805EA1C-E6CE-4590-9E9E-8D842A8DC743}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E805EA1C-E6CE-4590-9E9E-8D842A8DC743}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E805EA1C-E6CE-4590-9E9E-8D842A8DC743}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E805EA1C-E6CE-4590-9E9E-8D842A8DC743}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6837EFD9-7079-4CF7-B3E7-37D081879737}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6837EFD9-7079-4CF7-B3E7-37D081879737}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6837EFD9-7079-4CF7-B3E7-37D081879737}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6837EFD9-7079-4CF7-B3E7-37D081879737}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
