@@ -18,6 +18,7 @@
     <Authors>Nick Efremov</Authors>
     <IncludeSymbols>True</IncludeSymbols>
     <PackageReleaseNotes>https://github.com/nefremov/penqueen/README.md</PackageReleaseNotes>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
