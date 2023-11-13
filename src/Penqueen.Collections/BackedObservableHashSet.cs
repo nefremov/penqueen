@@ -7,15 +7,14 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.Linq.Expressions;
 
-namespace Penqueen.Tests.Domain;
+namespace Penqueen.Collections;
 
-public abstract class BackedObservableHashSet<TItem, TOwner, TContext> 
-    : ICollection<TItem>, IQueryable<TItem>, INotifyCollectionChanged
+
+public abstract class BackedObservableHashSet<TItem, TOwner> : IQueryableCollection<TItem>, INotifyCollectionChanged
     where TOwner : class
     where TItem : class
-    where TContext : DbContext
 {
-    protected TContext Context { get; }
+    protected DbContext Context { get; }
     protected IEntityType EntityType { get; }
     protected ILazyLoader LazyLoader { get; }
 
@@ -34,9 +33,9 @@ public abstract class BackedObservableHashSet<TItem, TOwner, TContext>
 
     private readonly ObservableHashSet<TItem> _storedCollection;
 
-    public BackedObservableHashSet(
+    protected BackedObservableHashSet(
         ObservableHashSet<TItem> internalCollection,
-        TContext context, TOwner ownerEntity, Expression<Func<TOwner, IEnumerable<TItem>>> collectionAccessor,
+        DbContext context, TOwner ownerEntity, Expression<Func<TOwner, IEnumerable<TItem>>> collectionAccessor,
         IEntityType entityType, ILazyLoader lazyLoader)
     {
         Context = context;
@@ -51,10 +50,15 @@ public abstract class BackedObservableHashSet<TItem, TOwner, TContext>
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    [Obsolete]
+    [Obsolete("This method is marked as obsolete to make the collection encapsulated")]
     public void Add(TItem item)
     {
         throw new NotSupportedException();
+    }
+
+    protected void AddInternal(TItem item)
+    {
+        _storedCollection.Add(item);
     }
 
     public void Load()

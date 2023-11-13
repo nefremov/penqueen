@@ -41,7 +41,7 @@ namespace Penqueen.Tests.Domain.Generated
         public Blog AddBlog(Guid id, string name, int? sample)
         {
             var entityType = Model.FindRuntimeEntityType(typeof(Blog));
-            var proxy = new BlogProxy(id, name, sample, this, entityType, this.GetService<ILazyLoader>());
+            var proxy = new BlogProxy(this, entityType, this.GetService<ILazyLoader>(), id, name, sample);
             Blogs.Add(proxy);
             return proxy;
         }

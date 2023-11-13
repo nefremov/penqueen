@@ -5,6 +5,7 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
     <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -18,7 +19,7 @@
     <RepositoryUrl>https://github.com/nefremov/penqueen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>EF Core;Source generator;Proxy</PackageTags>
-    <VersionPrefix>0.0.9</VersionPrefix>
+    <VersionPrefix>0.0.10</VersionPrefix>
     <Authors>Nick Efremov</Authors>
     <IncludeSymbols>True</IncludeSymbols>
     <PackageReleaseNotes>https://github.com/nefremov/penqueen/README.md</PackageReleaseNotes>
@@ -33,10 +34,6 @@
 
   <ItemGroup>
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="..\..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
   </ItemGroup>
 
   <ItemGroup>

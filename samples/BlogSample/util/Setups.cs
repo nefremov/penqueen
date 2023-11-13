@@ -7,10 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-//using Penqueen.Tests.Domain.Manual;
-using Penqueen.Tests.Domain.Generated;
-
-namespace Penqueen.Tests;
+namespace Penqueen.Samples.BlogSample;
 
 public record PostItem(Guid Id, string Text);
 public record BlogItem(Guid Id, string Name, int? Sample, PostItem[] Posts);

@@ -16,7 +16,7 @@ public class EntityPartialClassGenerator
         _entities = entities;
         foreach (IPropertySymbol member in entity.EntityType.GetMembers().OfType<IPropertySymbol>())
         {
-            if (!member.IsVirtual && !member.IsOverride)
+            if (!member.IsVirtual)
             {
                 continue;
             }
@@ -26,7 +26,7 @@ public class EntityPartialClassGenerator
                 continue;
             }
 
-            if (type.MetadataName == "ICollection`1")
+            if (type.MetadataName == "ICollection`1" || type.MetadataName == "IQueryableCollection`1")
             {
                 _collectionFields.Add(member);
             }
@@ -37,15 +37,13 @@ public class EntityPartialClassGenerator
     {
         HashSet<ITypeSymbol> collectionTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
         var stringBuilder = new StringBuilder();
-        stringBuilder.AppendLine("using Microsoft.EntityFrameworkCore.ChangeTracking;");
-        stringBuilder.AppendLine();
         stringBuilder.Append("namespace ").Append(_entity.EntityType.ContainingNamespace.ToDisplayString()).AppendLine(";");
         stringBuilder.AppendLine();
         stringBuilder.Append("public partial class ").Append(_entity.EntityType.Name);
         stringBuilder.AppendLine("{");
-        foreach (IPropertySymbol member in _collectionFields)
+        foreach (IPropertySymbol collectionProperty in _collectionFields)
         {
-            var type = (member.Type as INamedTypeSymbol)!;
+            var type = (collectionProperty.Type as INamedTypeSymbol)!;
             var childEntityData = _entities.FirstOrDefault(e => e.EntityType.Equals(type.TypeArguments[0], SymbolEqualityComparer.Default));
             if (childEntityData == null)
             {
@@ -53,7 +51,7 @@ public class EntityPartialClassGenerator
             }
 
             collectionTypes.Add(childEntityData.EntityType);
-            stringBuilder.AppendLine($"    protected ICollection<{childEntityData.EntityType.Name}> _{char.ToLower(member.Name[0])}{member.Name.Substring(1)} = new ObservableHashSet<{childEntityData.EntityType.Name}>();");
+            stringBuilder.AppendLine($"    protected ICollection<{childEntityData.EntityType.Name}> _{char.ToLower(collectionProperty.Name[0])}{collectionProperty.Name.Substring(1)} = new ObservableHashSet<{childEntityData.EntityType.Name}>();");
         }
 
         foreach (ITypeSymbol collectionType in collectionTypes)
@@ -66,23 +64,10 @@ public class EntityPartialClassGenerator
 
             foreach (var constructor in constructors)
             {
-                stringBuilder.Append($"        {collectionType.Name} CreateNew(");
-                for (var index = 0; index < constructor.Parameters.Length; index++)
-                {
-                    var parameter = constructor.Parameters[index];
-                    var type = (INamedTypeSymbol) parameter.Type;
-                    if (type.MetadataName == "Nullable`1")
-                    {
-                        type = (INamedTypeSymbol) type.TypeArguments[0];
-                    }
-
-                    stringBuilder.Append(type.Name).Append(" ").Append(parameter.Name);
-                    if (index != constructor.Parameters.Length - 1)
-                    {
-                        stringBuilder.Append(", ");
-                    }
-                }
-                stringBuilder.AppendLine(");");
+                stringBuilder
+                    .Append($"        {collectionType.Name} CreateNew(")
+                    .WriteConstructorParamDeclaration(constructor)
+                    .AppendLine(");");
             }
 
             stringBuilder.AppendLine("    }");

@@ -18,7 +18,7 @@ namespace Penqueen.Tests
             {
                 context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
-                Blog blog = context.AddBlog(blogId, "test", 1);
+                var blog = context.AddBlog(blogId, "test", 1);
                 context.SaveChanges();
             }
 
@@ -32,11 +32,13 @@ namespace Penqueen.Tests
         {
             Guid blogId = Guid.NewGuid();
             Guid postId = Guid.NewGuid();
-            using var context1 = new BlogContext();
-            context1.Database.EnsureDeleted();
-            context1.Database.EnsureCreated();
-            context1.AddBlog(blogId, "test", 1);
-            context1.SaveChanges();
+            using (var context1 = new BlogContext())
+            {
+                context1.Database.EnsureDeleted();
+                context1.Database.EnsureCreated();
+                context1.AddBlog(blogId, "test", 1);
+                context1.SaveChanges();
+            }
 
             var (context2, interceptor) = Setups.WithInterceptor();
             using (context2)

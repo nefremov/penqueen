@@ -1,26 +1,32 @@
-﻿namespace Penqueen.Tests.Domain.Generated;
+﻿using Penqueen.Types;
 
-    public partial class Blog {
+namespace Penqueen.Tests.Domain.Generated;
 
-        public virtual Guid Id { get; set; }
-        public virtual string Name { get; set; }
-        public virtual int? Sample { get; set; }
-        public virtual ICollection<Post> Posts { get; protected set; }
+[DeclareCollection]
+public class Blog
+{
 
-        protected Blog() { }
+    public virtual Guid Id { get; set; }
+    public virtual string Name { get; set; }
+    public virtual int? Sample { get; set; }
 
-        protected Blog(Guid id, string name, int? sample)
-        {
-            Id = id;
-            Name = name;
-            Sample = sample;
-        }
+    protected ICollection<Post> _posts;
+    public virtual ICollection<Post> Posts { get; protected set; }
 
-        public Post AddPost(Guid id, string text)
-        {
-            var post = ((Blog.IPostCollection)Posts).CreateNew(id, text, this);
-            _posts.Add(post);
-            return post;
-        }
+    protected Blog() { }
+
+    protected Blog(Guid id, string name, int? sample)
+    {
+        Id = id;
+        Name = name;
+        Sample = sample;
     }
+
+    public Post AddPost(Guid id, string text)
+    {
+        var post = ((IPostCollection)Posts).CreateNew(id, text, this);
+        _posts.Add(post);
+        return post;
+    }
+}
 

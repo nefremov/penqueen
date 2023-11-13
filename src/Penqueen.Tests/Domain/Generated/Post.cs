@@ -1,4 +1,7 @@
-﻿namespace Penqueen.Tests.Domain.Generated;
+﻿using Penqueen.Types;
+
+namespace Penqueen.Tests.Domain.Generated;
+[DeclareCollection]
 public partial class Post
 {
     public virtual Guid Id { get; set; }
@@ -10,7 +13,7 @@ public partial class Post
     {
     }
 
-    protected Post(Guid id, string text, Blog blog)
+    public Post(Guid id, string text, Blog blog)
     {
         Id = id;
         Text = text;
