@@ -1,5 +1,8 @@
-﻿namespace Penqueen.Samples.BlogSample
+﻿using Penqueen.Types;
+
+namespace Penqueen.Samples.BlogSample
 {
+    [DeclareCollection]
     public partial class Post
     {
         public virtual Guid Id { get; set; }
