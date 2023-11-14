@@ -1,11 +1,15 @@
-﻿namespace Penqueen.Samples.BlogSample
+﻿using Penqueen.Types;
+
+namespace Penqueen.Samples.BlogSample
 {
+    [DeclareCollection]
     public partial class Blog
     {
 
         public virtual Guid Id { get; set; }
         public virtual string Name { get; set; }
         public virtual int? Sample { get; set; }
+        protected ICollection<Post> _posts;
         public virtual ICollection<Post> Posts { get; protected set; }
 
         protected Blog() { }
@@ -19,8 +23,7 @@
 
         public Post AddPost(Guid id, string text)
         {
-            var post = ((Blog.IPostCollection)Posts).CreateNew(id, text, this);
-            _posts.Add(post);
+            var post = ((IPostCollection)Posts).CreateNew(id, text, this);
             return post;
         }
 
