@@ -15,38 +15,57 @@ public class ProxyFactoryGenerator
 
     public string Generate()
     {
-        var stringBuilder = new StringBuilder();
+        var sb = new StringBuilder(2000);
         foreach (var item in _entities.GroupBy(e => e.DbContext,
-                     (s, datas) => new { DbContext = s, EntityDatas = datas }, SymbolEqualityComparer.Default))
+                     (s, items) => new {DbContext = s!, EntityDatas = items}, SymbolEqualityComparer.Default))
         {
-            stringBuilder.AppendLine("using Microsoft.EntityFrameworkCore;");
-            stringBuilder.AppendLine("using Microsoft.EntityFrameworkCore.Infrastructure;");
-            stringBuilder.AppendLine("using Microsoft.EntityFrameworkCore.Metadata;");
-            stringBuilder.AppendLine("using Microsoft.EntityFrameworkCore.Proxies.Internal;");
-            stringBuilder.AppendLine();
-            stringBuilder.AppendLine();
-            stringBuilder.Append("namespace ").Append(item.DbContext.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;");
-            stringBuilder.AppendLine(); stringBuilder.Append(@"public class ").Append(item.DbContext.Name).AppendLine(@"ProxyFactory : IProxyFactory
-{
-    public object CreateLazyLoadingProxy(
-        DbContext context,
-        IEntityType entityType,
-        ILazyLoader loader,
-        object[] constructorArguments)
-    {");
+            sb
+                .AppendLine("using Microsoft.EntityFrameworkCore;")
+                .AppendLine("using Microsoft.EntityFrameworkCore.Infrastructure;")
+                .AppendLine("using Microsoft.EntityFrameworkCore.Metadata;")
+                .AppendLine("using Microsoft.EntityFrameworkCore.Proxies.Internal;")
+                .AppendLine()
+                .AppendLine()
+                .Append("namespace ").Append(item.DbContext.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
+                .AppendLine()
+                .Append("public class ").Append(item.DbContext.Name).AppendLine("ProxyFactory : IProxyFactory")
+                .AppendLine("{")
+                .Sp().AppendLine("public object CreateLazyLoadingProxy(")
+                .Sp().Sp().AppendLine("DbContext context,")
+                .Sp().Sp().AppendLine("IEntityType entityType,")
+                .Sp().Sp().AppendLine("ILazyLoader loader,")
+                .Sp().Sp().AppendLine("object[] constructorArguments")
+                .Sp().AppendLine(")")
+                .Sp().AppendLine("{");
             foreach (EntityData entityData in item.EntityDatas)
             {
-                stringBuilder.AppendLine($@"
-        if (entityType.ClrType == typeof({entityData.EntityType.Name}))
-        {{
-            return new {entityData.EntityType.Name}Proxy(({item.DbContext.Name})context, entityType, loader);
-        }}");
+                sb
+                    .Sp().Sp().Append("if (entityType.ClrType == typeof(").Append(entityData.EntityType).AppendLine("))")
+                    .Sp().Sp().AppendLine("{")
+                    .Sp().Sp().Sp().Append("return new ").Append(entityData.EntityType.Name).AppendLine("Proxy(context, entityType, loader);")
+                    .Sp().Sp().AppendLine("}");
             }
 
-            stringBuilder.AppendLine(@"
-        throw new NotSupportedException();
-    }
+            sb
+                .Sp().Sp().AppendLine("throw new NotSupportedException();")
+                .Sp().AppendLine("}")
+                .AppendLine()
+                .Sp().AppendLine("public Type CreateProxyType(IEntityType entityType)")
+                .Sp().AppendLine("{");
+            foreach (EntityData entityData in item.EntityDatas)
+            {
+                sb
+                    .Sp().Sp().Append("if (entityType.ClrType == typeof(").Append(entityData.EntityType).AppendLine("))")
+                    .Sp().Sp().AppendLine("{")
+                    .Sp().Sp().Sp().Append("return typeof(").Append(entityData.EntityType.Name).AppendLine("Proxy);")
+                    .Sp().Sp().AppendLine("}");
+            }
 
+            sb
+                .Sp().Sp().AppendLine("throw new NotSupportedException();")
+                .Sp().AppendLine("}")
+                .AppendLine();
+            sb.AppendLine(@"
     public object CreateProxy(
         DbContext context,
         IEntityType entityType,
@@ -57,23 +76,6 @@ public class ProxyFactoryGenerator
             entityType,
             context.GetService<ILazyLoader>(),
             constructorArguments);
-
-    }
-
-    public Type CreateProxyType(
-        IEntityType entityType)
-    {");
-            foreach (EntityData entityData in item.EntityDatas)
-            {
-                stringBuilder.AppendLine($@"
-        if (entityType.ClrType == typeof({entityData.EntityType.Name}))
-        {{
-            return typeof({entityData.EntityType.Name}Proxy);
-        }}");
-            }
-
-            stringBuilder.AppendLine(@"
-        throw new NotSupportedException();
     }
 
     public object Create(
@@ -83,10 +85,10 @@ public class ProxyFactoryGenerator
     {
         var entityType = context.Model.FindRuntimeEntityType(type);
         return CreateProxy(context, entityType, constructorArguments);
-    }
-}");
+    }")
+                .AppendLine("}");
         }
 
-        return stringBuilder.ToString();
+        return sb.ToString();
     }
 }

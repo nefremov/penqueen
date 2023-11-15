@@ -97,7 +97,7 @@ public class ProxyGenerator : ISourceGenerator {
                     continue;
                 }
                 ITypeSymbol entityType = type.TypeArguments.First();
-                result.Add(new EntityData { EntityType = entityType, DbSetName = rec.Symbol.Name, DbContext = typeNodeSymbol });
+                result.Add(new EntityData( entityType, rec.Symbol.Name, typeNodeSymbol));
             }
         }
 

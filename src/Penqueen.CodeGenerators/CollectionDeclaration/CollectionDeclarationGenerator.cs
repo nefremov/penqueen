@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Penqueen.CodeGenerators;
@@ -24,10 +23,10 @@ public class CollectionDeclarationGenerator : ISourceGenerator {
         }
 
 
-        var entityTypeCollectionDatas = DetectEntities(context, targetTypeTracker);
+        var entityTypeCollectionInfos = DetectEntities(context, targetTypeTracker);
 
         var collectionTypeHosts = new Dictionary<ITypeSymbol, HashSet<ITypeSymbol>>(SymbolEqualityComparer.Default);
-        foreach (var entityType in entityTypeCollectionDatas)
+        foreach (var entityType in entityTypeCollectionInfos)
         {
             foreach (var collectionType in entityType.CollectionItemTypes)
             {
@@ -43,17 +42,10 @@ public class CollectionDeclarationGenerator : ISourceGenerator {
             }
         }
 
-        //foreach (var entityTypeCollectionData in entityTypeCollectionDatas)
-        //{
-        //    var classGenerator = new EntityPartialClassGenerator2(entityTypeCollectionData);
-        //    context.AddSource($"{entityTypeCollectionData.EntityType.Name}.g", SourceText.From(classGenerator.Generate(), Encoding.UTF8));
-
-        //}
-
-        foreach (var entityTypeCollectionData in entityTypeCollectionDatas)
+        foreach (var entityTypeCollectionData in entityTypeCollectionInfos)
         {
             var generator = new CollectionInterfaceGenerator(entityTypeCollectionData);
-            context.AddSource($"{entityTypeCollectionData.EntityType.Name}Collection.g", SourceText.From(generator.Generate(), Encoding.UTF8));
+            context.AddSource($"I{entityTypeCollectionData.EntityType.Name}Collection.g", SourceText.From(generator.Generate(), Encoding.UTF8));
         }
     }
 
@@ -79,11 +71,12 @@ public class CollectionDeclarationGenerator : ISourceGenerator {
                 .ToList();
 
             var collectionItemTypes = new HashSet<INamedTypeSymbol>(
-                collectionProperties
-                    .Select(p => p.Type as INamedTypeSymbol)
-                    .Where(t => t is not null)
-                    .Select(t => t!.TypeArguments[0] as INamedTypeSymbol)
-                    .Where(t => t is not null),
+                from p in collectionProperties
+                        let type = p.Type as INamedTypeSymbol
+                where type is not null
+                    let typeArg = type.TypeArguments[0] as INamedTypeSymbol
+                where typeArg is not null
+                select typeArg!,
                 SymbolEqualityComparer.Default
             );
 

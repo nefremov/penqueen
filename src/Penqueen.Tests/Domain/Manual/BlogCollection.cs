@@ -10,18 +10,37 @@ using System.Linq.Expressions;
 namespace Penqueen.Tests.Domain.Manual;
 
 
-public class BlogCollection<T> : BackedObservableHashSet<Blog, T>, IBlogCollection where T: class
+public class BlogCollection<T> : BackedObservableHashSet<Blog, T>, IBlogCollection where T : class
 {
-    public BlogCollection(ObservableHashSet<Blog> internalCollection, DbContext context,
-        T ownerEntity, Expression<Func<T, IEnumerable<Blog>>> collectionAccessor, IEntityType entityType, ILazyLoader lazyLoader)
+    public BlogCollection
+    (
+        ObservableHashSet<Blog> internalCollection,
+        DbContext context,
+        T ownerEntity,
+        Expression<Func<T, IEnumerable<Blog>>> collectionAccessor,
+        IEntityType entityType,
+        ILazyLoader lazyLoader
+    )
         : base(internalCollection, context, ownerEntity, collectionAccessor, entityType, lazyLoader)
     {
     }
 
 
-    public Blog CreateNew(Guid id, string name, int? sample)
+    public Blog CreateNew(
+        Guid id,
+        string name,
+        int? sample = null
+    )
     {
-        var blog = new BlogProxy(id, name, sample, Context, EntityType, LazyLoader);
+        var blog = new BlogProxy
+        (
+            Context,
+            EntityType,
+            LazyLoader,
+            id,
+            name,
+            sample
+        );
         Context.Add(blog);
         return blog;
     }

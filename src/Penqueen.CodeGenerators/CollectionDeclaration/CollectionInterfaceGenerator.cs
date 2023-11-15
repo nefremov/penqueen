@@ -29,7 +29,11 @@ namespace Penqueen.CodeGenerators
                 .AppendLine("{");
             foreach (IMethodSymbol constructor in _constructors)
             {
-                sb.Sp().Append(type).Append(" CreateNew(").WriteConstructorParamDeclaration(constructor).AppendLine(");");
+                sb
+                    .Sp().Append(type).AppendLine(" CreateNew")
+                    .Sp().AppendLine("(")
+                    .WriteConstructorParamDeclaration(constructor, 8).AppendLine()
+                    .Sp().AppendLine(");");
             }
 
             sb.AppendLine("}");

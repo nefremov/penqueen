@@ -11,12 +11,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penqueen.Tests", "Penqueen.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution items", "{5975107D-CFD8-4E4A-9681-AF37CDED93F3}"
 	ProjectSection(SolutionItems) = preProject
+		Penqueen.sln.DotSettings = Penqueen.sln.DotSettings
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogSample", "..\samples\BlogSample\BlogSample.csproj", "{E805EA1C-E6CE-4590-9E9E-8D842A8DC743}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlogSample", "..\samples\BlogSample\BlogSample.csproj", "{E805EA1C-E6CE-4590-9E9E-8D842A8DC743}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Penqueen.Collections", "Penqueen.Collections\Penqueen.Collections.csproj", "{6837EFD9-7079-4CF7-B3E7-37D081879737}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Penqueen.Collections", "Penqueen.Collections\Penqueen.Collections.csproj", "{6837EFD9-7079-4CF7-B3E7-37D081879737}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

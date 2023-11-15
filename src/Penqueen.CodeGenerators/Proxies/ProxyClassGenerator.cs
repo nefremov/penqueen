@@ -7,7 +7,6 @@ namespace Penqueen.CodeGenerators;
 public class ProxyClassGenerator
 {
     private readonly EntityData _entity;
-    private readonly List<EntityData> _entities;
     private readonly List<IPropertySymbol> _simpleFields = new(10);
     private readonly List<IPropertySymbol> _entityFields = new(10);
     private readonly List<IPropertySymbol> _collectionFields = new(10);
@@ -17,7 +16,6 @@ public class ProxyClassGenerator
     public ProxyClassGenerator(EntityData entity, List<EntityData> entities)
     {
         _entity = entity;
-        _entities = entities;
         _namespaces.Add("Microsoft.EntityFrameworkCore");
         _namespaces.Add("Microsoft.EntityFrameworkCore.ChangeTracking");
         _namespaces.Add("Microsoft.EntityFrameworkCore.Infrastructure");
@@ -34,27 +32,33 @@ public class ProxyClassGenerator
 
             if (type.MetadataName == "ICollection`1")
             {
-                _collectionFields.Add(property);
-                _namespaces.Add("System.Collections.Generic");
-                continue;
+                if (entities.Any(e => e.EntityType.Equals(type.TypeArguments[0], SymbolEqualityComparer.Default)))
+                {
+                    _collectionFields.Add(property);
+                    _namespaces.Add("System.Collections.Generic");
+                    continue;
+                }
+                // simple field
             }
 
             if (type.MetadataName == "IQueryableCollection`1")
             {
-                _collectionFields.Add(property);
-                _namespaces.Add("Penqueen.Collections");
-                continue;
+                if (entities.Any(e => e.EntityType.Equals(type.TypeArguments[0], SymbolEqualityComparer.Default)))
+                {
+                    _collectionFields.Add(property);
+                    _namespaces.Add("Penqueen.Collections");
+                    continue;
+                }
+                // simple field
             }
 
             if (entities.Any(e => e.EntityType.Equals(type, SymbolEqualityComparer.Default)))
             {
                 _entityFields.Add(property);
-                _namespaces.Add(property.Type.ContainingNamespace.ToDisplayString());
                 continue;
             }
 
             _simpleFields.Add(property);
-            _namespaces.Add(property.Type.ContainingNamespace.ToDisplayString());
         }
 
 
@@ -64,79 +68,68 @@ public class ProxyClassGenerator
 
     public string Generate()
     {
-        var stringBuilder = new StringBuilder();
-        stringBuilder.WriteUsings(_namespaces);
-        stringBuilder.Append("namespace ").Append(_entity.DbContext.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;");
-        stringBuilder.AppendLine();
-        stringBuilder.Append("public class ").Append(_entity.EntityType.Name).Append("Proxy : ")
-            .Append(_entity.EntityType.Name).AppendLine(", INotifyPropertyChanged, INotifyPropertyChanging");
-        stringBuilder.AppendLine("{");
-        stringBuilder.AppendLine("    private readonly DbContext _context;");
-        stringBuilder.AppendLine("    private readonly IEntityType _entityType;");
-        stringBuilder.AppendLine("    private readonly ILazyLoader _lazyLoader;");
-        stringBuilder.AppendLine();
-        stringBuilder.AppendLine(
-            $"    public {_entity.EntityType.Name}Proxy(DbContext context, IEntityType entityType, ILazyLoader lazyLoader)");
-        stringBuilder.AppendLine("    {");
-        stringBuilder.AppendLine("        _context = context;");
-        stringBuilder.AppendLine("        _entityType = entityType;");
-        stringBuilder.AppendLine("        _lazyLoader = lazyLoader;");
-        WriteInitChildCollections(stringBuilder);
+        var sb = new StringBuilder(2000);
+        sb.WriteUsings(_namespaces)
+            .Append("namespace ").Append(_entity.DbContext.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
+            .AppendLine()
+            .Append("public class ").Append(_entity.EntityType.Name).Append("Proxy : ")
+            .Append(_entity.EntityType).AppendLine(", INotifyPropertyChanged, INotifyPropertyChanging")
+            .AppendLine("{")
+            .AppendLine("    private readonly DbContext _context;")
+            .AppendLine("    private readonly IEntityType _entityType;")
+            .AppendLine("    private readonly ILazyLoader _lazyLoader;")
+            .AppendLine()
+            .Append("    public ").Append(_entity.EntityType.Name).AppendLine("Proxy(DbContext context, IEntityType entityType, ILazyLoader lazyLoader)")
+            .AppendLine("    {")
+            .AppendLine("        _context = context;")
+            .AppendLine("        _entityType = entityType;")
+            .AppendLine("        _lazyLoader = lazyLoader;")
+            .WriteInitChildCollections(_entity.EntityType, _collectionFields)
 
-        stringBuilder.AppendLine("    }");
+            .AppendLine("    }")
+            .AppendLine();
 
         foreach (IMethodSymbol constructor in _constructors)
         {
-            stringBuilder
-                .Append($"    public {_entity.EntityType.Name}Proxy(DbContext context, IEntityType entityType, ILazyLoader lazyLoader, ")
-                .WriteConstructorParamDeclaration(constructor)
-                .AppendLine(")");
-            stringBuilder
-                .Append("        :base (").WriteConstructorParamCall(constructor).AppendLine(")");
-            stringBuilder.AppendLine("    {");
-            stringBuilder.AppendLine("        _context = context;");
-            stringBuilder.AppendLine("        _entityType = entityType;");
-            stringBuilder.AppendLine("        _lazyLoader = lazyLoader;");
+            sb
+                .Sp().Append("public ").Append(_entity.EntityType.Name).Append("Proxy")
+                .Sp().AppendLine("(")
+                .Sp().Sp().AppendLine("DbContext context,")
+                .Sp().Sp().AppendLine("IEntityType entityType,")
+                .Sp().Sp().AppendLine("ILazyLoader lazyLoader,")
+                .WriteConstructorParamDeclaration(constructor, 8).AppendLine()
+                .Sp().AppendLine(")")
 
-            WriteInitChildCollections(stringBuilder);
-
-            stringBuilder.AppendLine("    }");
+                .Sp().Sp().AppendLine(": base")
+                .Sp().Sp().AppendLine("(")
+                .WriteConstructorParamCall(constructor, 12).AppendLine()
+                .Sp().Sp().AppendLine(")")
+                .Sp().AppendLine("{")
+                .Sp().Sp().AppendLine("_context = context;")
+                .Sp().Sp().AppendLine("_entityType = entityType;")
+                .Sp().Sp().AppendLine("_lazyLoader = lazyLoader;")
+                .WriteInitChildCollections(_entity.EntityType, _collectionFields)
+                .Sp().AppendLine("}")
+                .AppendLine();
         }
 
         foreach (IPropertySymbol member in _simpleFields)
         {
-            stringBuilder.WhiteSimpleNotificationWrapper(member, 4);
+            sb.WhiteSimpleNotificationWrapper(member, 4);
         }
 
         foreach (IPropertySymbol member in _entityFields)
         {
-            stringBuilder.WhiteDomainNotificationWrapper(member, 4);
+            sb.WhiteDomainNotificationWrapper(member, 4);
         }
 
 
-        stringBuilder.AppendLine("    public event PropertyChangedEventHandler? PropertyChanged;");
-        stringBuilder.AppendLine("    public event PropertyChangingEventHandler? PropertyChanging;");
+        sb.AppendLine("    public event PropertyChangedEventHandler? PropertyChanged;");
+        sb.AppendLine("    public event PropertyChangingEventHandler? PropertyChanging;");
 
 
-        stringBuilder.AppendLine("}");
-        return stringBuilder.ToString();
+        sb.AppendLine("}");
+        return sb.ToString();
     }
 
-
-    private StringBuilder WriteInitChildCollections(StringBuilder stringBuilder)
-    {
-        foreach (IPropertySymbol member in _collectionFields)
-        {
-            var type = member.Type as INamedTypeSymbol;
-            var childEntityData = _entities.FirstOrDefault(e => e.EntityType.Equals(type.TypeArguments[0], SymbolEqualityComparer.Default));
-            if (childEntityData == null)
-            {
-                throw new NotSupportedException($"Can't find type {type} in dbSets");
-            }
-            stringBuilder.AppendLine($"        _{char.ToLower(member.Name[0])}{member.Name.Substring(1)} = new ObservableHashSet<{childEntityData.EntityType.Name}>();");
-            stringBuilder.AppendLine($"        {member.Name} = new {childEntityData.EntityType.Name}Collection<{_entity.EntityType.Name}>((ObservableHashSet<{childEntityData.EntityType.Name}>)_{char.ToLower(member.Name[0])}{member.Name.Substring(1)}, _context, this, _ => _.{member.Name}, _entityType, _lazyLoader);");
-        }
-
-        return stringBuilder;
-    }
 }

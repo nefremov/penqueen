@@ -15,7 +15,7 @@ public class Blog
 
     protected Blog() { }
 
-    protected Blog(Guid id, string name, int? sample)
+    protected Blog(Guid id, string name, int? sample = null)
     {
         Id = id;
         Name = name;

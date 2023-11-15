@@ -19,8 +19,20 @@ public class PostProxy : Post, INotifyPropertyChanged, INotifyPropertyChanging
         _lazyLoader = lazyLoader;
     }
 
-    public PostProxy(Guid id, string name, Blog blog, DbContext context, IEntityType entityType, ILazyLoader lazyLoader)
-        : base(id, name, blog)
+    public PostProxy
+    (
+        DbContext context,
+        IEntityType entityType,
+        ILazyLoader lazyLoader,
+        Guid id,
+        string name,
+        Blog blog
+    )
+        : base(
+            id,
+            name,
+            blog
+        )
     {
         _context = context;
         _entityType = entityType;
@@ -65,6 +77,7 @@ public class PostProxy : Post, INotifyPropertyChanged, INotifyPropertyChanging
     }
 
     private bool _BlogIsLoaded = false;
+
     public override Blog Blog
     {
         set
@@ -82,7 +95,7 @@ public class PostProxy : Post, INotifyPropertyChanged, INotifyPropertyChanging
             if (!_BlogIsLoaded)
             {
                 var navigationName = "Blog";
-                var navigationBase = _entityType.FindNavigation(navigationName) ?? (INavigationBase?)_entityType.FindSkipNavigation(navigationName);
+                var navigationBase = _entityType.FindNavigation(navigationName) ?? (INavigationBase?) _entityType.FindSkipNavigation(navigationName);
 
                 if (navigationBase != null && !(navigationBase is INavigation navigation && navigation.ForeignKey.IsOwnership))
                 {

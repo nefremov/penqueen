@@ -19,7 +19,8 @@ namespace Penqueen.CodeGenerators
 
         public string Generate()
         {
-            var type = _entity.EntityType.Name;
+            var type = _entity.EntityType;
+            var typeFqdn = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("using Microsoft.EntityFrameworkCore;")
                 .AppendLine("using Microsoft.EntityFrameworkCore.ChangeTracking;")
@@ -34,20 +35,35 @@ namespace Penqueen.CodeGenerators
                 .AppendLine()
                 .Append("namespace ").Append(_entity.DbContext.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
                 .AppendLine()
-                .Append("public class ").Append(type).Append("Collection<T> : BackedObservableHashSet<").Append(type).Append(", T>, I").Append(type).Append("Collection").AppendLine(" where T : class")
+                .Append("public class ").Append(type.Name).Append("Collection<T> : BackedObservableHashSet<").Append(type).Append(", T>, I").Append(type.Name).Append("Collection").AppendLine(" where T : class")
                 .AppendLine("{")
-                .Sp().Append("public ").Append(type).Append("Collection(ObservableHashSet<").Append(type).AppendLine("> internalCollection, DbContext context,")
-                .Sp().Sp().Append("T ownerEntity, Expression<Func<T, IEnumerable<").Append(type).AppendLine(">>> collectionAccessor,")
-                .Sp().Sp().AppendLine("IEntityType entityType, ILazyLoader lazyLoader)")
-                .Sp().AppendLine(": base(internalCollection, context, ownerEntity, collectionAccessor, entityType, lazyLoader)")
+                .Sp().Append("public ").Append(type.Name).AppendLine("Collection")
+                .Sp().AppendLine("(")
+                .Sp().Sp().Append("ObservableHashSet<").Append(type).AppendLine("> internalCollection,")
+                .Sp().Sp().AppendLine("DbContext context,")
+                .Sp().Sp().AppendLine("T ownerEntity,")
+                .Sp().Sp().Append("Expression<Func<T, IEnumerable<").Append(type).AppendLine(">>> collectionAccessor,")
+                .Sp().Sp().AppendLine("IEntityType entityType,")
+                .Sp().Sp().AppendLine("ILazyLoader lazyLoader")
+                .Sp().AppendLine(")")
+                .Sp().Sp().AppendLine(": base(internalCollection, context, ownerEntity, collectionAccessor, entityType, lazyLoader)")
                 .Sp().AppendLine("{")
                 .Sp().AppendLine("}");
             foreach (IMethodSymbol constructor in _constructors)
             {
                 stringBuilder
-                    .Sp().Append("public ").Append(type).Append(" CreateNew(").WriteConstructorParamDeclaration(constructor).AppendLine(")")
+                    .Sp().Append("public ").Append(type).AppendLine(" CreateNew")
+                    .Sp().AppendLine("(")
+                    .WriteConstructorParamDeclaration(constructor, 8).AppendLine()
+                    .Sp().AppendLine(")")
                     .Sp().AppendLine("{")
-                    .Sp().Sp().Append("var item = new ").Append(type).Append("Proxy(Context, EntityType, LazyLoader, ").WriteConstructorParamCall(constructor).AppendLine(");")
+                    .Sp().Sp().Append("var item = new ").Append(type.Name).AppendLine("Proxy")
+                    .Sp().Sp().AppendLine("(")
+                    .Sp().Sp().Sp().AppendLine("Context,")
+                    .Sp().Sp().Sp().AppendLine("EntityType,")
+                    .Sp().Sp().Sp().AppendLine("LazyLoader,")
+                    .WriteConstructorParamCall(constructor,12).AppendLine()
+                    .Sp().Sp().AppendLine(");")
                     .Sp().Sp().AppendLine("Context.Add(item);")
                     .Sp().Sp().AppendLine("return item;")
                     .Sp().AppendLine("}");

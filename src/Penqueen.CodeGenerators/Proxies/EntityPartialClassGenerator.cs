@@ -66,8 +66,8 @@ public class EntityPartialClassGenerator
             {
                 stringBuilder
                     .Append($"        {collectionType.Name} CreateNew(")
-                    .WriteConstructorParamDeclaration(constructor)
-                    .AppendLine(");");
+                    .WriteConstructorParamDeclaration(constructor, 12)
+                    .Sp(8).AppendLine(");");
             }
 
             stringBuilder.AppendLine("    }");
