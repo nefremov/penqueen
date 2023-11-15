@@ -1,4 +1,5 @@
 ﻿using System.Text;
+
 using Microsoft.CodeAnalysis;
 
 namespace Penqueen.CodeGenerators;
@@ -50,7 +51,7 @@ public static class StringBuilderExtensions
         var name = property.Name;
 
         builder
-            .Sp(shift).Append("public override ").Append(type).Append(nullable? "? " : " ").AppendLine(name)
+            .Sp(shift).Append("public override ").Append(type).Append(nullable ? "? " : " ").AppendLine(name)
             .Sp(shift).AppendLine("{")
             .Sp(shift).Sp().AppendLine("set")
             .Sp(shift).Sp().AppendLine("{")
@@ -109,8 +110,17 @@ public static class StringBuilderExtensions
 
     }
 
-    public static StringBuilder WriteConstructorParamDeclaration(this StringBuilder builder, IMethodSymbol constructor, bool lastComma = false)
+    public static StringBuilder WriteConstructorParamDeclaration(this StringBuilder builder, IMethodSymbol constructor, int shift)
     {
+        var format = SymbolDisplayFormat.FullyQualifiedFormat
+            .AddParameterOptions(
+                SymbolDisplayParameterOptions.IncludeDefaultValue
+                | SymbolDisplayParameterOptions.IncludeName
+                | SymbolDisplayParameterOptions.IncludeType)
+            .AddMiscellaneousOptions(
+                SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier
+            );
+
         for (var index = 0; index < constructor.Parameters.Length; index++)
         {
             var parameter = constructor.Parameters[index];
@@ -121,25 +131,43 @@ public static class StringBuilderExtensions
                 type = (INamedTypeSymbol)type.TypeArguments[0];
             }
 
-            builder.Append(type.Name).Append(nullable ? "? " : " ").Append(parameter.Name);
-            if (index != constructor.Parameters.Length - 1 || lastComma)
+            builder
+                .Sp(shift).Append(parameter.ToDisplayString(format));
+            /*.Append(type).Append(nullable ? "? " : " ").Append(parameter.Name);
+        if (parameter.HasExplicitDefaultValue)
+        {
+            builder.Append(" = ").Append(parameter.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+        }*/
+            if (index != constructor.Parameters.Length - 1)
             {
-                builder.Append(", ");
+                builder.AppendLine(", ");
             }
         }
         return builder;
     }
-    public static StringBuilder WriteConstructorParamCall(this StringBuilder builder, IMethodSymbol constructor, bool lastComma = false)
+    public static StringBuilder WriteConstructorParamCall(this StringBuilder builder, IMethodSymbol constructor, int shift)
     {
         for (var index = 0; index < constructor.Parameters.Length; index++)
         {
             var parameter = constructor.Parameters[index];
-            builder.Append(parameter.Name);
-            if (index != constructor.Parameters.Length - 1 || lastComma)
+            builder.Sp(shift).Append(parameter.Name);
+            if (index != constructor.Parameters.Length - 1)
             {
-                builder.Append(", ");
+                builder.AppendLine(", ");
             }
         }
         return builder;
+    }
+
+    public static StringBuilder WriteInitChildCollections(this StringBuilder stringBuilder, ITypeSymbol ownerType, IEnumerable<IPropertySymbol> collectionFields)
+    {
+        foreach (IPropertySymbol member in collectionFields)
+        {
+            var type = ((INamedTypeSymbol)member.Type).TypeArguments[0];
+            stringBuilder.AppendLine($"        _{char.ToLower(member.Name[0])}{member.Name.Substring(1)} = new ObservableHashSet<{type}>();");
+            stringBuilder.AppendLine($"        {member.Name} = new {type.Name}Collection<{ownerType}>((ObservableHashSet<{type}>) _{char.ToLower(member.Name[0])}{member.Name.Substring(1)}, _context, this, _ => _.{member.Name}, _entityType, _lazyLoader);");
+        }
+
+        return stringBuilder;
     }
 }

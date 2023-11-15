@@ -19,19 +19,31 @@ public class BlogProxy : Blog, INotifyPropertyChanged, INotifyPropertyChanging
         _entityType = entityType;
         _lazyLoader = lazyLoader;
         _posts = new ObservableHashSet<Post>();
-        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context, this, _ => _.Posts,
+        Posts = new PostCollection<Blog>((ObservableHashSet<Post>) _posts, _context, this, _ => _.Posts,
             entityType, lazyLoader);
     }
 
-    public BlogProxy(Guid id, string name, int? sample, DbContext context, IEntityType entityType, ILazyLoader lazyLoader)
-        : base(id, name, sample)
+    public BlogProxy
+    (
+        DbContext context,
+        IEntityType entityType,
+        ILazyLoader lazyLoader,
+        Guid id,
+        string name,
+        int? sample = null
+    )
+        : base
+        (
+            id,
+            name,
+            sample
+        )
     {
         _context = context;
         _entityType = entityType;
         _lazyLoader = lazyLoader;
         _posts = new ObservableHashSet<Post>();
-        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context,  this, _ => _.Posts,
-            entityType, lazyLoader);
+        Posts = new PostCollection<Blog>((ObservableHashSet<Post>) _posts, _context, this, _ => _.Posts, entityType, lazyLoader);
     }
 
     //public BlogProxy(BlogContext context, IEntityType entityType, ILazyLoader lazyLoader, params object[] arguments)
