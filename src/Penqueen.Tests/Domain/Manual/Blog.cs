@@ -5,7 +5,7 @@
 
         public virtual Guid Id { get; set; }
         public virtual string Name { get; set; }
-        public virtual int? Sample { get; set; }
+        public virtual int? Sample { get; protected set; }
         public virtual ICollection<Post> Posts { get; protected set; }
 
         protected ICollection<Post> _posts;

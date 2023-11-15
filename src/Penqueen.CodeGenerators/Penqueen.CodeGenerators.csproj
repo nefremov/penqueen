@@ -19,7 +19,7 @@
     <RepositoryUrl>https://github.com/nefremov/penqueen</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>EF Core;Source generator;Proxy</PackageTags>
-    <VersionPrefix>0.0.11</VersionPrefix>
+    <VersionPrefix>0.0.12</VersionPrefix>
     <Authors>Nick Efremov</Authors>
     <IncludeSymbols>True</IncludeSymbols>
     <PackageReleaseNotes>https://github.com/nefremov/penqueen/README.md</PackageReleaseNotes>
