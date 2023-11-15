@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Penqueen.CodeGenerators;
@@ -42,10 +44,26 @@ public class CollectionDeclarationGenerator : ISourceGenerator {
             }
         }
 
-        foreach (var entityTypeCollectionData in entityTypeCollectionInfos)
+        foreach (var entityTypeCollectionInfo in
+                 entityTypeCollectionInfos
+                     .Where(
+                         e =>
+                             e.EntityType.DeclaringSyntaxReferences.Any(
+                                 sr =>
+                                     sr.GetSyntax() is ClassDeclarationSyntax cd
+                                     && cd.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword))
+                             )
+                     )
+                )
         {
-            var generator = new CollectionInterfaceGenerator(entityTypeCollectionData);
-            context.AddSource($"I{entityTypeCollectionData.EntityType.Name}Collection.g", SourceText.From(generator.Generate(), Encoding.UTF8));
+            var generator = new EntityPartialClassGenerator(entityTypeCollectionInfo);
+            context.AddSource($"{entityTypeCollectionInfo.EntityType.Name}.g", SourceText.From(generator.Generate(), Encoding.UTF8));
+        }
+
+        foreach (var entityTypeCollectionInfo in entityTypeCollectionInfos)
+        {
+            var generator = new CollectionInterfaceGenerator(entityTypeCollectionInfo);
+            context.AddSource($"I{entityTypeCollectionInfo.EntityType.Name}Collection.g", SourceText.From(generator.Generate(), Encoding.UTF8));
         }
     }
 

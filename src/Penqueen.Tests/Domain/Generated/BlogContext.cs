@@ -9,7 +9,7 @@ using System.Diagnostics;
 
 namespace Penqueen.Tests.Domain.Generated
 {
-    [GenerateProxies]
+    [GenerateProxies(CustomProxies = true, ConfigurationMixins = true)]
     public class BlogContext : DbContext
     {
         public DbSet<Blog> Blogs { get; set; }

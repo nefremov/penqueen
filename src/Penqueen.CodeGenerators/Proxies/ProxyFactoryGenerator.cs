@@ -16,7 +16,7 @@ public class ProxyFactoryGenerator
     public string Generate()
     {
         var sb = new StringBuilder(2000);
-        foreach (var item in _entities.GroupBy(e => e.DbContext,
+        foreach (var item in _entities.GroupBy(e => e.DbContext.DbContextType,
                      (s, items) => new {DbContext = s!, EntityDatas = items}, SymbolEqualityComparer.Default))
         {
             sb

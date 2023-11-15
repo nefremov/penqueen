@@ -4,6 +4,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
+using Penqueen.Types;
+
 namespace Penqueen.CodeGenerators;
 
 [Generator]
@@ -46,21 +48,28 @@ public class ProxyGenerator : ISourceGenerator {
 
         var builders = DetectEntities(context, targetTypeTracker, dbContextType, dbSetType);
 
-        foreach (var builder in builders)
+        foreach (var builder in builders.Where(b=>b.DbContext.GenerateProxies))
         {
             var generator = new ProxyClassGenerator(builder, builders);
             context.AddSource($"{builder.EntityType.Name}Proxy.g", SourceText.From(generator.Generate(), Encoding.UTF8));
         }
 
-        foreach (var builder in builders)
+        foreach (var builder in builders.Where(b => b.DbContext.GenerateProxies))
         {
             var generator = new CollectionClassGenerator(builder);
             context.AddSource($"{builder.EntityType.Name}Collection.g", SourceText.From(generator.Generate(), Encoding.UTF8));
         }
 
-        var extGenerator = new DbContextOptionsBuilderExtensionGenerator(builders);
+        foreach (var builder in builders.Where(b => b.DbContext.GenerateMixins))
+        {
+            var generator = new EntityConfigurationMixinGenerator(builder, builders);
+            context.AddSource($"{builder.EntityType.Name}EntityTypeConfigurationMixin.g", SourceText.From(generator.Generate(), Encoding.UTF8));
+        }
+
+
+        var extGenerator = new DbContextOptionsBuilderExtensionGenerator(builders.Where(b => b.DbContext.GenerateProxies).ToList());
         context.AddSource("ProxyExtensions.g", SourceText.From(extGenerator.Generate(), Encoding.UTF8));
-        var pfGenerator = new ProxyFactoryGenerator(builders);
+        var pfGenerator = new ProxyFactoryGenerator(builders.Where(b => b.DbContext.GenerateProxies).ToList());
         context.AddSource("ProxyFactories.g", SourceText.From(pfGenerator.Generate(), Encoding.UTF8));
     }
 
@@ -82,6 +91,17 @@ public class ProxyGenerator : ISourceGenerator {
                 continue;
             }
 
+            var attr = typeNodeSymbol.GetAttributes().FirstOrDefault(a => a.AttributeClass.Name == nameof(GenerateProxiesAttribute));
+
+            var customProxiesArg = attr!.NamedArguments.Where(a => a.Key == nameof(GenerateProxiesAttribute.CustomProxies)).Select(a => a.Value.Value).FirstOrDefault();
+            var cnfigurationMixinsArg = attr!.NamedArguments.Where(a => a.Key == nameof(GenerateProxiesAttribute.ConfigurationMixins)).Select(a => a.Value.Value).FirstOrDefault();
+
+            bool generateProxies = customProxiesArg != null && (bool)customProxiesArg;
+            bool generateMixins = cnfigurationMixinsArg != null && (bool)cnfigurationMixinsArg;
+
+
+            var dbContextData = new DbContextData(typeNodeSymbol, generateProxies, generateMixins);
+
             var dbSetProperties = typeNode.Members.OfType<PropertyDeclarationSyntax>().Select(p => new { Syntax = p, Symbol = semanticModel.GetDeclaredSymbol(p) })
                 .Where(x => x.Symbol != null && symbolEqualityComparer.Equals(x.Symbol.Type.OriginalDefinition, dbSetType));
 
@@ -97,7 +117,7 @@ public class ProxyGenerator : ISourceGenerator {
                     continue;
                 }
                 ITypeSymbol entityType = type.TypeArguments.First();
-                result.Add(new EntityData( entityType, rec.Symbol.Name, typeNodeSymbol));
+                result.Add(new EntityData( entityType, rec.Symbol.Name, dbContextData));
             }
         }
 

@@ -33,7 +33,7 @@ namespace Penqueen.CodeGenerators
                 .AppendLine()
                 .Append("using ").Append(_entity.EntityType.ContainingNamespace.ToDisplayString()).AppendLine(";")
                 .AppendLine()
-                .Append("namespace ").Append(_entity.DbContext.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
+                .Append("namespace ").Append(_entity.DbContext.DbContextType.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
                 .AppendLine()
                 .Append("public class ").Append(type.Name).Append("Collection<T> : BackedObservableHashSet<").Append(type).Append(", T>, I").Append(type.Name).Append("Collection").AppendLine(" where T : class")
                 .AppendLine("{")

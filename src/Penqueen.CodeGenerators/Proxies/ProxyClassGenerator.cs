@@ -70,7 +70,7 @@ public class ProxyClassGenerator
     {
         var sb = new StringBuilder(2000);
         sb.WriteUsings(_namespaces)
-            .Append("namespace ").Append(_entity.DbContext.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
+            .Append("namespace ").Append(_entity.DbContext.DbContextType.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
             .AppendLine()
             .Append("public class ").Append(_entity.EntityType.Name).Append("Proxy : ")
             .Append(_entity.EntityType).AppendLine(", INotifyPropertyChanged, INotifyPropertyChanging")
