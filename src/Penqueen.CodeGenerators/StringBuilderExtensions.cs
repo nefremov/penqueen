@@ -53,7 +53,7 @@ public static class StringBuilderExtensions
         builder
             .Sp(shift).Append("public override ").Append(type).Append(nullable ? "? " : " ").AppendLine(name)
             .Sp(shift).AppendLine("{")
-            .Sp(shift).Sp().AppendLine("set")
+            .Sp(shift).Sp().WriteMethodAccessibility(property.SetMethod!.DeclaredAccessibility).AppendLine("set")
             .Sp(shift).Sp().AppendLine("{")
             .Sp(shift).Sp().Sp().Append($"if (value != base.").Append(name).AppendLine(")")
             .Sp(shift).Sp().Sp().AppendLine("{")
@@ -81,7 +81,7 @@ public static class StringBuilderExtensions
             .Sp(shift).Append("private bool _").Append(name).AppendLine("IsLoaded = false;")
             .Sp(shift).Append("public override ").Append(type).Append(" ").AppendLine(name)
             .Sp(shift).AppendLine("{")
-            .Sp(shift).Sp().AppendLine("set")
+            .Sp(shift).Sp().WriteMethodAccessibility(property.SetMethod!.DeclaredAccessibility).AppendLine("set")
             .Sp(shift).Sp().AppendLine("{")
             .Sp(shift).Sp().Sp().Append($"if (value != base.").Append(name).AppendLine(")")
             .Sp(shift).Sp().Sp().AppendLine("{")
@@ -91,7 +91,7 @@ public static class StringBuilderExtensions
             .Sp(shift).Sp().Sp().Sp().Append("PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(\"").Append(name).AppendLine("\"));")
             .Sp(shift).Sp().Sp().AppendLine("}")
             .Sp(shift).Sp().AppendLine("}")
-            .Sp(shift).Sp().AppendLine("get")
+            .Sp(shift).Sp().WriteMethodAccessibility(property.GetMethod!.DeclaredAccessibility).AppendLine("get")
             .Sp(shift).Sp().AppendLine("{")
             .Sp(shift).Sp().Sp().Append($"if (_").Append(name).AppendLine("IsLoaded)")
             .Sp(shift).Sp().Sp().AppendLine("{")
@@ -108,6 +108,29 @@ public static class StringBuilderExtensions
             .Sp(shift).AppendLine("}");
         return builder;
 
+    }
+
+    public static StringBuilder WriteMethodAccessibility(this StringBuilder builder, Accessibility accessibility)
+    {
+        switch (accessibility)
+        {
+            case Accessibility.NotApplicable:
+                return builder;
+            case Accessibility.Private:
+                return builder.Append("private ");
+            case Accessibility.ProtectedAndInternal:
+                return builder.Append("private protected ");
+            case Accessibility.Protected:
+                return builder.Append("protected ");
+            case Accessibility.Internal:
+                return builder.Append("internal ");
+            case Accessibility.ProtectedOrInternal:
+                return builder.Append("protected internal ");
+            case Accessibility.Public:
+                return builder;
+            default:
+                return builder;
+        }
     }
 
     public static StringBuilder WriteConstructorParamDeclaration(this StringBuilder builder, IMethodSymbol constructor, int shift)

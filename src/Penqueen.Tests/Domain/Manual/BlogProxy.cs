@@ -79,6 +79,19 @@ public class BlogProxy : Blog, INotifyPropertyChanged, INotifyPropertyChanging
         }
     }
 
+    public override int? Sample
+    {
+        protected set
+        {
+            if (value != base.Sample)
+            {
+                PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(nameof(Sample)));
+                base.Sample = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Sample)));
+            }
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
     public event PropertyChangingEventHandler? PropertyChanging;
 }
