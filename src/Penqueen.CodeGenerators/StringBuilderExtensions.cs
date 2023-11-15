@@ -133,6 +133,29 @@ public static class StringBuilderExtensions
         }
     }
 
+    public static StringBuilder WriteTypeAccessibility(this StringBuilder builder, Accessibility accessibility)
+    {
+        switch (accessibility)
+        {
+            case Accessibility.NotApplicable:
+                return builder;
+            case Accessibility.Private:
+                return builder.Append("private ");
+            case Accessibility.ProtectedAndInternal:
+                return builder.Append("private protected ");
+            case Accessibility.Protected:
+                return builder.Append("protected ");
+            case Accessibility.Internal:
+                return builder.Append("internal ");
+            case Accessibility.ProtectedOrInternal:
+                return builder.Append("protected internal ");
+            case Accessibility.Public:
+                return builder.Append("public ");
+            default:
+                return builder;
+        }
+    }
+
     public static StringBuilder WriteConstructorParamDeclaration(this StringBuilder builder, IMethodSymbol constructor, int shift)
     {
         var format = SymbolDisplayFormat.FullyQualifiedFormat

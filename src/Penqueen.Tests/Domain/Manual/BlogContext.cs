@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Proxies.Internal;
+using Penqueen.Tests.Domain.Manual.Configuration;
 
 namespace Penqueen.Tests.Domain.Manual
 {
@@ -37,8 +38,9 @@ namespace Penqueen.Tests.Domain.Manual
         {
             base.OnModelCreating(modelBuilder);
             //modelBuilder.Entity<Blog>().HasMany(_ => _.Posts).WithOne(_=>_.Blog)...HasField("_posts"));
-            var navigation = modelBuilder.Entity<Blog>().Navigation(_ => _.Posts).HasField("_posts");//.UsePropertyAccessMode(PropertyAccessMode.Field);
-
+            //var navigation = modelBuilder.Entity<Blog>().Navigation(_ => _.Posts).HasField("_posts");//.UsePropertyAccessMode(PropertyAccessMode.Field);
+            modelBuilder.Entity<Blog>().ConfigureBackingFields();
+            modelBuilder.Entity<Post>().ConfigureBackingFields();
             //navigation.SetPropertyAccessMode(PropertyAccessMode.Field);
         }
 

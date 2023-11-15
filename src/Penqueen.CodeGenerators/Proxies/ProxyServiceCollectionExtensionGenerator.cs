@@ -10,7 +10,7 @@ public class DbContextOptionsBuilderExtensionGenerator
 
     public DbContextOptionsBuilderExtensionGenerator(List<EntityData> entities)
     {
-        _dbContexts = entities.Select(e => e.DbContext).Distinct(SymbolEqualityComparer.Default).OfType<ITypeSymbol>().ToList();
+        _dbContexts = entities.Select(e => e.DbContext.DbContextType).Distinct(SymbolEqualityComparer.Default).OfType<ITypeSymbol>().ToList();
         _namespaces = _dbContexts.Select(c => c.ContainingNamespace.ToDisplayString()).Distinct().ToList();
     }
 
