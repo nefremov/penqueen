@@ -6,6 +6,7 @@ using Penqueen.Tests.Domain.Generated.Proxy;
 using Penqueen.Types;
 
 using System.Diagnostics;
+using Penqueen.CodeGenerators;
 
 namespace Penqueen.Tests.Domain.Generated
 {
@@ -38,10 +39,17 @@ namespace Penqueen.Tests.Domain.Generated
             //navigation.SetPropertyAccessMode(PropertyAccessMode.Field);
         }
 
-        public Blog AddBlog(Guid id, string name, int? sample)
+        public Blog AddBlog(Guid id, string name, SampleEnum enumProp, int? sample)
         {
             var entityType = Model.FindRuntimeEntityType(typeof(Blog));
-            var proxy = new BlogProxy(this, entityType, this.GetService<ILazyLoader>(), id, name, sample);
+            var proxy = new BlogProxy(this, entityType, this.GetService<ILazyLoader>(), id, name, enumProp, sample);
+            Blogs.Add(proxy);
+            return proxy;
+        }
+        public Blog AddBlog(Guid id, string name, SampleEnum enumProp, int? sample, IEnumerable<PostItem> posts)
+        {
+            var entityType = Model.FindRuntimeEntityType(typeof(Blog));
+            var proxy = new BlogProxy(this, entityType, this.GetService<ILazyLoader>(), id, name, enumProp, sample, posts);
             Blogs.Add(proxy);
             return proxy;
         }

@@ -3,7 +3,10 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+using Penqueen.CodeGenerators;
+
 using System.ComponentModel;
+using Penqueen.Collections;
 
 namespace Penqueen.Tests.Domain.Manual;
 
@@ -13,14 +16,18 @@ public class BlogProxy : Blog, INotifyPropertyChanged, INotifyPropertyChanging
     private readonly IEntityType _entityType;
     private readonly ILazyLoader _lazyLoader;
 
-    public BlogProxy(BlogContext context, IEntityType entityType, ILazyLoader lazyLoader)
+    public BlogProxy(DbContext context, IEntityType entityType, ILazyLoader lazyLoader)
     {
         _context = context;
         _entityType = entityType;
         _lazyLoader = lazyLoader;
-        _posts = new ObservableHashSet<Post>();
-        Posts = new PostCollection<Blog>((ObservableHashSet<Post>) _posts, _context, this, _ => _.Posts,
-            entityType, lazyLoader);
+        _posts = new QueryableHashSet<Post>();
+        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context, this, _ => _.Posts, _entityType, _lazyLoader);
+
+        if (CollectionsInitialized != null)
+        {
+            CollectionsInitialized();
+        }
     }
 
     public BlogProxy
@@ -30,20 +37,60 @@ public class BlogProxy : Blog, INotifyPropertyChanged, INotifyPropertyChanging
         ILazyLoader lazyLoader,
         Guid id,
         string name,
+        SampleEnum enumProp = SampleEnum.Second,
         int? sample = null
     )
         : base
         (
             id,
             name,
+            enumProp,
             sample
         )
     {
         _context = context;
         _entityType = entityType;
         _lazyLoader = lazyLoader;
-        _posts = new ObservableHashSet<Post>();
-        Posts = new PostCollection<Blog>((ObservableHashSet<Post>) _posts, _context, this, _ => _.Posts, entityType, lazyLoader);
+        _posts = new QueryableHashSet<Post>();
+        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context, this, _ => _.Posts, _entityType, _lazyLoader);
+
+        if (CollectionsInitialized != null)
+        {
+            CollectionsInitialized();
+        }
+    }
+
+    public BlogProxy
+    (
+        DbContext context,
+        IEntityType entityType,
+        ILazyLoader lazyLoader,
+        Guid id,
+        string name,
+        SampleEnum enumProp = SampleEnum.Second,
+        int? sample = null,
+        IEnumerable<PostItem>? posts = null
+    )
+        : base
+        (
+            id,
+            name,
+            enumProp,
+            sample,
+            posts
+        )
+    {
+        _context = context;
+        _entityType = entityType;
+        _lazyLoader = lazyLoader;
+
+        _posts = new QueryableHashSet<Post>();
+        Posts = new PostCollection<Blog>((ObservableHashSet<Post>)_posts, _context, this, _ => _.Posts, _entityType, _lazyLoader);
+
+        if (CollectionsInitialized != null)
+        {
+            CollectionsInitialized();
+        }
     }
 
     //public BlogProxy(BlogContext context, IEntityType entityType, ILazyLoader lazyLoader, params object[] arguments)

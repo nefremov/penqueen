@@ -45,9 +45,10 @@ public class EntityConfigurationMixinGenerator
     {
         var sb = new StringBuilder();
         sb
+            .AppendLine("using Microsoft.EntityFrameworkCore;")
             .AppendLine("using Microsoft.EntityFrameworkCore.Metadata.Builders;")
             .AppendLine()
-            .Append("namespace ").Append(_entity.DbContext.DbContextType.ContainingNamespace.ToDisplayString()).AppendLine(".Configuration;")
+            .Append("namespace ").Append(_entity.DbContext.DbContextType.ContainingNamespace.ToDisplayString()).AppendLine(".Configurations;")
             .AppendLine()
             .Append("public static class ").Append(_entity.EntityType.Name).AppendLine("EntityTypeConfigurationMixin")
             .AppendLine("{")
@@ -56,7 +57,7 @@ public class EntityConfigurationMixinGenerator
         foreach (IPropertySymbol member in _collectionFields)
         {
             sb
-                .Sp().Sp().Append("builder.Navigation(g => g.").Append(member.Name).Append(").HasField(\"_").Append(char.ToLower(member.Name[0])).Append(member.Name.Substring(1)).AppendLine("\");");
+                .Sp().Sp().Append("builder.Navigation(g => g.").Append(member.Name).Append(").HasField(\"_").Append(char.ToLower(member.Name[0])).Append(member.Name.Substring(1)).AppendLine("\").UsePropertyAccessMode(PropertyAccessMode.Field);");
         }
 
         sb

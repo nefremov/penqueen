@@ -6,14 +6,15 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Penqueen.CodeGenerators;
 
-//using Penqueen.Tests.Domain.Manual;
-using Penqueen.Tests.Domain.Generated;
+using Penqueen.Tests.Domain.Manual;
+//using Penqueen.Tests.Domain.Generated;
 
 namespace Penqueen.Tests;
 
 public record PostItem(Guid Id, string Text);
-public record BlogItem(Guid Id, string Name, int? Sample, PostItem[] Posts);
+public record BlogItem(Guid Id, string Name, SampleEnum enumProp, int? Sample, PostItem[] Posts);
 
 public static class Setups
 {
@@ -22,7 +23,8 @@ public static class Setups
         new(
             Guid.NewGuid(),
             "Blog 1",
-            0,
+            SampleEnum.Second,
+            1,
             new PostItem[]
             {
                 new(Guid.NewGuid(), "Post 1 text"),
@@ -33,6 +35,7 @@ public static class Setups
         new(
             Guid.NewGuid(),
             "Blog 2",
+            SampleEnum.First,
             0,
             new PostItem[]
             {
@@ -52,7 +55,7 @@ public static class Setups
 
         foreach (BlogItem blogItem in Blogs)
         {
-            var blog = context.AddBlog(blogItem.Id, blogItem.Name, blogItem.Sample);
+            var blog = context.AddBlog(blogItem.Id, blogItem.Name, blogItem.enumProp, blogItem.Sample);
             foreach (PostItem postItem in blogItem.Posts)
             {
                 var post = blog.AddPost(postItem.Id, postItem.Text);

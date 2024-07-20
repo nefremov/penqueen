@@ -21,12 +21,12 @@ public class BlogContextProxyFactory : IProxyFactory
     {
         if (entityType.ClrType == typeof(Blog))
         {
-            return new BlogProxy((BlogContext)context, entityType, loader);
+            return new BlogProxy(context, entityType, loader);
         }
 
         if (entityType.ClrType == typeof(Post))
         {
-            return new PostProxy((BlogContext)context, entityType, loader);
+            return new PostProxy(context, entityType, loader);
         }
 
         throw new NotSupportedException();

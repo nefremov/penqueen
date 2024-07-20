@@ -12,7 +12,7 @@ public class PostProxy : Post, INotifyPropertyChanged, INotifyPropertyChanging
     private readonly ILazyLoader _lazyLoader;
     private readonly DbContext _context;
 
-    public PostProxy(BlogContext context, IEntityType entityType, ILazyLoader lazyLoader)
+    public PostProxy(DbContext context, IEntityType entityType, ILazyLoader lazyLoader)
     {
         _context = context;
         _entityType = entityType;

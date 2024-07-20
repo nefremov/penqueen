@@ -46,4 +46,20 @@ public static class SourceGenExtensions
 
         return results;
     }
+    public static List<ISymbol> GetMembersWithInherited(this ITypeSymbol namedTypeSymbol)
+    {
+        var members = namedTypeSymbol.GetMembers().ToArray();
+        List<ISymbol> results = members.ToList();
+        while (namedTypeSymbol.BaseType is not null)
+        {
+            members = namedTypeSymbol.BaseType.GetMembers().OfType<ISymbol>().ToArray();
+
+            // add virtual properties not overriden in inheritors
+            results.AddRange(members.Where(m=> results.All(p => p.Name != m.Name)));
+            // add more new overrides
+            namedTypeSymbol = namedTypeSymbol.BaseType;
+        }
+
+        return results;
+    }
 }
