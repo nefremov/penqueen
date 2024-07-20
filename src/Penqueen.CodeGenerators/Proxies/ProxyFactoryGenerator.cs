@@ -25,6 +25,7 @@ public class ProxyFactoryGenerator
                 .AppendLine("using Microsoft.EntityFrameworkCore.Metadata;")
                 .AppendLine("using Microsoft.EntityFrameworkCore.Proxies.Internal;")
                 .AppendLine()
+                .AppendLine("using System;")
                 .AppendLine()
                 .Append("namespace ").Append(item.DbContext.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
                 .AppendLine()
@@ -42,7 +43,7 @@ public class ProxyFactoryGenerator
                 sb
                     .Sp().Sp().Append("if (entityType.ClrType == typeof(").Append(entityData.EntityType).AppendLine("))")
                     .Sp().Sp().AppendLine("{")
-                    .Sp().Sp().Sp().Append("return new ").Append(entityData.EntityType.Name).AppendLine("Proxy(context, entityType, loader);")
+                    .WriteProxyConstructorCall(entityData.EntityType, 12)
                     .Sp().Sp().AppendLine("}");
             }
 

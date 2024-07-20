@@ -29,6 +29,8 @@ namespace Penqueen.CodeGenerators
                 .AppendLine()
                 .AppendLine("using Penqueen.Collections;")
                 .AppendLine()
+                .AppendLine("using System;")
+                .AppendLine("using System.Collections.Generic;")
                 .AppendLine("using System.Linq.Expressions;")
                 .AppendLine()
                 .Append("using ").Append(_entity.EntityType.ContainingNamespace.ToDisplayString()).AppendLine(";")
@@ -64,7 +66,7 @@ namespace Penqueen.CodeGenerators
                     .Sp().Sp().Sp().AppendLine("LazyLoader,")
                     .WriteConstructorParamCall(constructor,12).AppendLine()
                     .Sp().Sp().AppendLine(");")
-                    .Sp().Sp().AppendLine("Context.Add(item);")
+                    .Sp().Sp().AppendLine("AddInternal(item);")
                     .Sp().Sp().AppendLine("return item;")
                     .Sp().AppendLine("}");
             }

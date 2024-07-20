@@ -6,15 +6,26 @@ namespace Penqueen.CodeGenerators;
 
 public class ProxyClassGenerator
 {
+    private static readonly DiagnosticDescriptor SetterRequiredDescriptor = new(
+        id: "PQ002",
+        title: "Overridable set method required",
+        messageFormat: "Entity type `{0}` must have overridable setter for the property `{1}`",
+        category: "ProxyGenerator",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private readonly GeneratorExecutionContext _context;
     private readonly EntityData _entity;
     private readonly List<IPropertySymbol> _simpleFields = new(10);
     private readonly List<IPropertySymbol> _entityFields = new(10);
     private readonly List<IPropertySymbol> _collectionFields = new(10);
     private readonly HashSet<string> _namespaces = new();
     private readonly List<IMethodSymbol> _constructors;
+    private readonly bool _supportCollectionInitialized;
 
-    public ProxyClassGenerator(EntityData entity, List<EntityData> entities)
+    public ProxyClassGenerator(GeneratorExecutionContext context, EntityData entity, List<EntityData> entities, INamedTypeSymbol actionTypeSymbol)
     {
+        _context = context;
         _entity = entity;
         _namespaces.Add("Microsoft.EntityFrameworkCore");
         _namespaces.Add("Microsoft.EntityFrameworkCore.ChangeTracking");
@@ -64,6 +75,13 @@ public class ProxyClassGenerator
 
         _constructors = entity.EntityType.GetMembers().OfType<IMethodSymbol>()
             .Where(m => m.MethodKind == MethodKind.Constructor && m.Parameters.Any()).ToList();
+
+
+        _supportCollectionInitialized = entity.EntityType
+            .GetMembersWithInherited()
+            .OfType<IFieldSymbol>()
+            .Any(s => s.Name == "CollectionsInitialized" && SymbolEqualityComparer.Default.Equals(s.Type, actionTypeSymbol));
+
     }
 
     public string Generate()
@@ -78,13 +96,14 @@ public class ProxyClassGenerator
             .AppendLine("    private readonly DbContext _context;")
             .AppendLine("    private readonly IEntityType _entityType;")
             .AppendLine("    private readonly ILazyLoader _lazyLoader;")
+            .AppendLine("    private bool _initialized => _context != null;")
             .AppendLine()
             .Append("    public ").Append(_entity.EntityType.Name).AppendLine("Proxy(DbContext context, IEntityType entityType, ILazyLoader lazyLoader)")
             .AppendLine("    {")
             .AppendLine("        _context = context;")
             .AppendLine("        _entityType = entityType;")
             .AppendLine("        _lazyLoader = lazyLoader;")
-            .WriteInitChildCollections(_entity.EntityType, _collectionFields)
+            .WriteInitChildCollections(_entity.EntityType, _collectionFields, _supportCollectionInitialized, 8)
 
             .AppendLine("    }")
             .AppendLine();
@@ -108,18 +127,26 @@ public class ProxyClassGenerator
                 .Sp().Sp().AppendLine("_context = context;")
                 .Sp().Sp().AppendLine("_entityType = entityType;")
                 .Sp().Sp().AppendLine("_lazyLoader = lazyLoader;")
-                .WriteInitChildCollections(_entity.EntityType, _collectionFields)
+                .WriteInitChildCollections(_entity.EntityType, _collectionFields, _supportCollectionInitialized, 8)
                 .Sp().AppendLine("}")
                 .AppendLine();
         }
 
         foreach (IPropertySymbol member in _simpleFields)
         {
+            if (member.SetMethod == null)
+            {
+                _context.ReportDiagnostic(Diagnostic.Create(SetterRequiredDescriptor, Location.None, _entity.EntityType, member.Name));
+            }
             sb.WhiteSimpleNotificationWrapper(member, 4);
         }
 
         foreach (IPropertySymbol member in _entityFields)
         {
+            if (member.SetMethod == null)
+            {
+                _context.ReportDiagnostic(Diagnostic.Create(SetterRequiredDescriptor, Location.None, _entity.EntityType, member.Name));
+            }
             sb.WhiteDomainNotificationWrapper(member, 4);
         }
 

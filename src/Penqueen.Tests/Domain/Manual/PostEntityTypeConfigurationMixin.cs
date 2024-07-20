@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Penqueen.Tests.Domain.Manual.Configuration;
+namespace Penqueen.Tests.Domain.Manual.Configurations;
 
 public static class PostEntityTypeConfigurationMixin
 {

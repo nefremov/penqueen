@@ -33,6 +33,9 @@ public abstract class BackedObservableHashSet<TItem, TOwner> : IQueryableCollect
 
     private readonly ObservableHashSet<TItem> _storedCollection;
 
+    private readonly ReadOnlyHashSet<TItem> _local;
+    public IReadOnlyCollection<TItem> Local => _local;
+
     protected BackedObservableHashSet(
         ObservableHashSet<TItem> internalCollection,
         DbContext context, TOwner ownerEntity, Expression<Func<TOwner, IEnumerable<TItem>>> collectionAccessor,
@@ -44,7 +47,9 @@ public abstract class BackedObservableHashSet<TItem, TOwner> : IQueryableCollect
         OwnerEntity = ownerEntity;
         _collectionAccessor = collectionAccessor;
         _storedCollection = internalCollection;
+        _local = new ReadOnlyHashSet<TItem>(_storedCollection);
     }
+
 
     public IEnumerator<TItem> GetEnumerator() => _storedCollection.GetEnumerator();
 
@@ -80,12 +85,23 @@ public abstract class BackedObservableHashSet<TItem, TOwner> : IQueryableCollect
 
     public void CopyTo(TItem[] array, int arrayIndex)
     {
-        throw new NotSupportedException();
+        if (CollectionEntry.IsLoaded)
+        {
+            _storedCollection.CopyTo(array, arrayIndex);
+        }
+
+        else
+        {
+            Load();
+            _storedCollection.CopyTo(array, arrayIndex);
+        }
     }
 
     public bool Remove(TItem item)
     {
-        throw new NotSupportedException();
+        var result = Context.Remove(item);
+        _storedCollection.Remove(item);
+        return result.State == EntityState.Deleted || result.State == EntityState.Detached; // Detached == 0 so flag checking doesn't work
     }
 
     public int Count => _storedCollection.Count;

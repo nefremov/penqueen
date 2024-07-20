@@ -43,7 +43,7 @@ public class PostCollection<T> : BackedObservableHashSet<Post, T>, IPostCollecti
             name,
             blog
         );
-        Context.Add(post);
+        AddInternal(post);
         return post;
     }
 }
