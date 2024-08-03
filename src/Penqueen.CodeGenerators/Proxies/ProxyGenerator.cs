@@ -1,13 +1,14 @@
-﻿using System.Text;
-
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
+using Penqueen.CodeGenerators.Proxies.Descriptors;
 using Penqueen.Types;
 
-namespace Penqueen.CodeGenerators;
+using System.Text;
+
+namespace Penqueen.CodeGenerators.Proxies;
 
 [Generator]
 public class ProxyGenerator : ISourceGenerator
@@ -29,9 +30,14 @@ public class ProxyGenerator : ISourceGenerator
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    private static readonly string[] RequiredReferences = { "Microsoft.EntityFrameworkCore", "Microsoft.EntityFrameworkCore.Proxies", "Penqueen.Collections" };
+    private static readonly string AttributeName = nameof(GenerateProxiesAttribute).Substring(0, nameof(GenerateProxiesAttribute).Length - nameof(Attribute).Length);
 
-    public void Execute(GeneratorExecutionContext context)
+    private static readonly string[] RequiredReferences = ["Microsoft.EntityFrameworkCore", "Microsoft.EntityFrameworkCore.Proxies", "Penqueen.Collections"];
+
+    public virtual ISourceGeneratorFactory CreateSourceGeneratorFactory(GeneratorExecutionContext context, DbContextDescriptor dbContextDescriptor, INamedTypeSymbol actionTypeSymbol)
+        => new DefaultSourceGeneratorFactory(context, dbContextDescriptor, actionTypeSymbol);
+
+    public virtual void Execute(GeneratorExecutionContext context)
     {
         try
         {
@@ -56,9 +62,9 @@ public class ProxyGenerator : ISourceGenerator
             }
 
 
-            var builders = DetectEntities(context, targetTypeTracker, dbContextType, dbSetType);
+            var dbContextDescriptors = DetectEntities(context, targetTypeTracker, dbContextType, dbSetType);
 
-            if (builders.Count > 0)
+            if (dbContextDescriptors.Count > 0)
             {
                 foreach (var requiredReference in RequiredReferences)
                 {
@@ -69,29 +75,59 @@ public class ProxyGenerator : ISourceGenerator
                 }
             }
 
-            foreach (var builder in builders.Where(b => b.DbContext.GenerateProxies))
+            foreach (var dbContextDescriptor in dbContextDescriptors)
             {
-                var generator = new ProxyClassGenerator(context, builder, builders, actionType);
-                context.AddSource($"{builder.EntityType.Name}Proxy.g", SourceText.From(generator.Generate(), Encoding.UTF8));
+                ISourceGeneratorFactory factory =  CreateSourceGeneratorFactory(context, dbContextDescriptor, actionType);
+                if (dbContextDescriptor.GenerateProxies)
+                {
+                    foreach (var entityDescriptor in dbContextDescriptor.EntityDescriptors)
+                    {
+                        var generator = factory.GetProxyClassGenerator(entityDescriptor);
+                        var proxyClassText = generator?.Generate();
+                        if (proxyClassText != null)
+                        {
+                            context.AddSource($"{entityDescriptor.EntityType.Name}Proxy.g", SourceText.From(proxyClassText, Encoding.UTF8));
+                        }
+                    }
+
+                    foreach (var entityDescriptor in dbContextDescriptor.EntityDescriptors)
+                    {
+                        var generator = factory.GetCollectionClassGenerator(entityDescriptor);
+                        var collectionClassText = generator?.Generate();
+                        if (collectionClassText != null)
+                        {
+                            context.AddSource($"{entityDescriptor.EntityType.Name}Collection.g", SourceText.From(collectionClassText, Encoding.UTF8));
+                        }
+                    }
+
+                    var extGenerator = factory.GetDbContextOptionsBuilderExtensionsGenerator();
+                    var extensionsText = extGenerator?.Generate();
+                    if (extensionsText != null)
+                    {
+                        context.AddSource($"{dbContextDescriptor.DbContextType.Name}ProxyExtensions.g", SourceText.From(extensionsText, Encoding.UTF8));
+                    }
+
+                    var pfGenerator = factory.GetProxyFactoryGenerator();
+                    var factoryText = pfGenerator?.Generate();
+                    if (factoryText != null)
+                    {
+                        context.AddSource("ProxyFactories.g", SourceText.From(factoryText, Encoding.UTF8));
+                    }
+                }
+
+                if (dbContextDescriptor.GenerateMixins)
+                {
+                    foreach (var entityDescriptor in dbContextDescriptor.EntityDescriptors)
+                    {
+                        var generator = factory.GetEntityConfigurationMixinGenerator(entityDescriptor);
+                        var mixinText = generator?.Generate();
+                        if (mixinText != null)
+                        {
+                            context.AddSource($"{dbContextDescriptor.DbContextType.Name}{entityDescriptor.EntityType.Name}EntityTypeConfigurationMixin.g", SourceText.From(mixinText, Encoding.UTF8));
+                        }
+                    }
+                }
             }
-
-            foreach (var builder in builders.Where(b => b.DbContext.GenerateProxies))
-            {
-                var generator = new CollectionClassGenerator(builder);
-                context.AddSource($"{builder.EntityType.Name}Collection.g", SourceText.From(generator.Generate(), Encoding.UTF8));
-            }
-
-            foreach (var builder in builders.Where(b => b.DbContext.GenerateMixins))
-            {
-                var generator = new EntityConfigurationMixinGenerator(builder, builders);
-                context.AddSource($"{builder.EntityType.Name}EntityTypeConfigurationMixin.g", SourceText.From(generator.Generate(), Encoding.UTF8));
-            }
-
-
-            var extGenerator = new DbContextOptionsBuilderExtensionGenerator(builders.Where(b => b.DbContext.GenerateProxies).ToList());
-            context.AddSource("ProxyExtensions.g", SourceText.From(extGenerator.Generate(), Encoding.UTF8));
-            var pfGenerator = new ProxyFactoryGenerator(builders.Where(b => b.DbContext.GenerateProxies).ToList());
-            context.AddSource("ProxyFactories.g", SourceText.From(pfGenerator.Generate(), Encoding.UTF8));
         }
         catch (Exception ex)
         {
@@ -99,13 +135,14 @@ public class ProxyGenerator : ISourceGenerator
         }
     }
 
-    public void Initialize(GeneratorInitializationContext context)
+    public virtual void Initialize(GeneratorInitializationContext context)
     {
-        context.RegisterForSyntaxNotifications(() => new ProxyGeneratorTargetTypeTracker());
+
+        context.RegisterForSyntaxNotifications(() => new ProxyGeneratorTargetTypeTracker(AttributeName));
     }
-    private static List<EntityData> DetectEntities(GeneratorExecutionContext context, ProxyGeneratorTargetTypeTracker proxyGeneratorTargetTypeTracker, INamedTypeSymbol dbContextType, INamedTypeSymbol dbSetType)
+    private static List<DbContextDescriptor> DetectEntities(GeneratorExecutionContext context, ProxyGeneratorTargetTypeTracker proxyGeneratorTargetTypeTracker, INamedTypeSymbol dbContextType, INamedTypeSymbol dbSetType)
     {
-        List<EntityData> result = new List<EntityData>();
+        List<DbContextDescriptor> result = new List<DbContextDescriptor>();
         var symbolEqualityComparer = SymbolEqualityComparer.Default;
         foreach (var typeNode in proxyGeneratorTargetTypeTracker.TypesForProxyGeneration)
         {
@@ -118,16 +155,22 @@ public class ProxyGenerator : ISourceGenerator
                 continue;
             }
 
-            var attr = typeNodeSymbol.GetAttributes().FirstOrDefault(a => a.AttributeClass.Name == nameof(GenerateProxiesAttribute));
+            var attr = typeNodeSymbol.GetAttributes().First(a => a.AttributeClass?.Name == nameof(GenerateProxiesAttribute));
 
-            var customProxiesArg = attr!.NamedArguments.Where(a => a.Key == nameof(GenerateProxiesAttribute.CustomProxies)).Select(a => a.Value.Value).FirstOrDefault();
-            var cnfigurationMixinsArg = attr!.NamedArguments.Where(a => a.Key == nameof(GenerateProxiesAttribute.ConfigurationMixins)).Select(a => a.Value.Value).FirstOrDefault();
+            var customProxiesArg = attr.NamedArguments
+                .Where(a => a.Key == nameof(GenerateProxiesAttribute.CustomProxies))
+                .Select(a => a.Value.Value)
+                .FirstOrDefault();
+            var configurationMixinsArg = attr.NamedArguments
+                .Where(a => a.Key == nameof(GenerateProxiesAttribute.ConfigurationMixins))
+                .Select(a => a.Value.Value)
+                .FirstOrDefault();
 
-            bool generateProxies = customProxiesArg != null && (bool)customProxiesArg;
-            bool generateMixins = cnfigurationMixinsArg != null && (bool)cnfigurationMixinsArg;
+            var generateProxies = customProxiesArg != null && (bool)customProxiesArg;
+            var generateMixins = configurationMixinsArg != null && (bool)configurationMixinsArg;
 
 
-            var dbContextData = new DbContextData(typeNodeSymbol, generateProxies, generateMixins);
+            var dbContextDescriptor = new DbContextDescriptor(typeNodeSymbol, generateProxies, generateMixins, new List<EntityDescriptor>());
 
             var dbSetProperties = typeNode.Members.OfType<PropertyDeclarationSyntax>().Select(p => new { Syntax = p, Symbol = semanticModel.GetDeclaredSymbol(p) })
                 .Where(x => x.Symbol != null && symbolEqualityComparer.Equals(x.Symbol.Type.OriginalDefinition, dbSetType));
@@ -144,9 +187,11 @@ public class ProxyGenerator : ISourceGenerator
                     continue;
                 }
                 ITypeSymbol entityType = type.TypeArguments.First();
-                result.Add(new EntityData(entityType, rec.Symbol.Name, dbContextData));
+                dbContextDescriptor.AddEntityDescriptor(new EntityDescriptor(entityType, rec.Symbol.Name));
             }
         }
+
+        result.RemoveAll(r => r.EntityDescriptors.Count == 0);
 
         return result;
     }

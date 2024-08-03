@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 using Microsoft.CodeAnalysis;
 
@@ -33,22 +34,13 @@ public static class StringBuilderExtensions
 
     public static StringBuilder WhiteSimpleNotificationWrapper(this StringBuilder builder, IPropertySymbol property, int shift)
     {
-        var type = (property.Type as INamedTypeSymbol);
-        if (type == null)
+        var result = property.GetPropertyType();
+        if (result == null)
         {
             return builder;
         }
 
-        var nullable = type.MetadataName == "Nullable`1";
-        var reference = type.IsReferenceType;
-        if (nullable)
-        {
-            type = (type.TypeArguments[0] as INamedTypeSymbol);
-            if (type == null)
-            {
-                return builder;
-            }
-        }
+        var (type, nullable, reference) = result.Value;
 
         var name = property.Name;
 

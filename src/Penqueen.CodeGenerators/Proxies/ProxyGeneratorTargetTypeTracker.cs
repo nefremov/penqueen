@@ -1,19 +1,23 @@
-﻿using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Penqueen.CodeGenerators;
+using System.Collections.Immutable;
 
-public class ProxyGeneratorTargetTypeTracker : ISyntaxContextReceiver
+namespace Penqueen.CodeGenerators.Proxies;
+
+public class ProxyGeneratorTargetTypeTracker(string attributeName) : ISyntaxContextReceiver
 {
     public IImmutableList<TypeDeclarationSyntax> TypesForProxyGeneration = ImmutableList.Create<TypeDeclarationSyntax>();
 
-    public void OnVisitSyntaxNode(GeneratorSyntaxContext context) {
-        if (context.Node is TypeDeclarationSyntax cdecl) {
-            if (cdecl.IsDecoratedWithAttribute("GenerateProxies")) {
-                TypesForProxyGeneration = TypesForProxyGeneration.Add(cdecl);
-            }
+    public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
+    {
+        if (context.Node is not TypeDeclarationSyntax classDecl)
+        {
+            return;
+        }
+
+        if (classDecl.IsDecoratedWithAttribute(attributeName)) {
+            TypesForProxyGeneration = TypesForProxyGeneration.Add(classDecl);
         }
     }
 }
-

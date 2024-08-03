@@ -1,17 +1,21 @@
 ﻿using Microsoft.CodeAnalysis;
 
+using Penqueen.CodeGenerators.Proxies.Descriptors;
+
 using System.Text;
 
-namespace Penqueen.CodeGenerators
+namespace Penqueen.CodeGenerators.Proxies.Generators
 {
-    public class CollectionClassGenerator
+    public class DefaultCollectionClassGenerator : ICollectionClassGenerator
     {
-        private readonly EntityData _entity;
+        private readonly EntityDescriptor _entity;
+        private readonly DbContextDescriptor _dbContextDescriptor;
         private readonly List<IMethodSymbol> _constructors;
 
-        public CollectionClassGenerator(EntityData entity)
+        public DefaultCollectionClassGenerator(EntityDescriptor entity, DbContextDescriptor dbContextDescriptor)
         {
             _entity = entity;
+            _dbContextDescriptor = dbContextDescriptor;
 
             _constructors = entity.EntityType.GetMembers().OfType<IMethodSymbol>()
                 .Where(m => m.MethodKind == MethodKind.Constructor && m.Parameters.Any()).ToList();
@@ -35,7 +39,7 @@ namespace Penqueen.CodeGenerators
                 .AppendLine()
                 .Append("using ").Append(_entity.EntityType.ContainingNamespace.ToDisplayString()).AppendLine(";")
                 .AppendLine()
-                .Append("namespace ").Append(_entity.DbContext.DbContextType.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
+                .Append("namespace ").Append(_dbContextDescriptor.DbContextType.ContainingNamespace.ToDisplayString()).AppendLine(".Proxy;")
                 .AppendLine()
                 .Append("public class ").Append(type.Name).Append("Collection<T> : BackedObservableHashSet<").Append(type).Append(", T>, I").Append(type.Name).Append("Collection").AppendLine(" where T : class")
                 .AppendLine("{")
@@ -64,7 +68,7 @@ namespace Penqueen.CodeGenerators
                     .Sp().Sp().Sp().AppendLine("Context,")
                     .Sp().Sp().Sp().AppendLine("EntityType,")
                     .Sp().Sp().Sp().AppendLine("LazyLoader,")
-                    .WriteConstructorParamCall(constructor,12).AppendLine()
+                    .WriteConstructorParamCall(constructor, 12).AppendLine()
                     .Sp().Sp().AppendLine(");")
                     .Sp().Sp().AppendLine("AddInternal(item);")
                     .Sp().Sp().AppendLine("return item;")

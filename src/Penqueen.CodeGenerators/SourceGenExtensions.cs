@@ -62,4 +62,52 @@ public static class SourceGenExtensions
 
         return results;
     }
+
+    public static (INamedTypeSymbol Type, bool Nullable, bool Reference)? GetPropertyType(this IPropertySymbol property)
+    {
+        if (property.Type is not INamedTypeSymbol type)
+        {
+            return null;
+        }
+
+        var nullable = type.MetadataName == "Nullable`1";
+        if (!nullable)
+        {
+            return (type, nullable, type.IsReferenceType);
+        }
+
+        if (type.TypeArguments[0] is not INamedTypeSymbol internalType)
+        {
+            return null;
+        }
+
+        return (internalType, nullable, internalType.IsReferenceType);
+    }
+
+    public static bool InheritsFromOrEquals(this ITypeSymbol type, ITypeSymbol baseType, bool includeInterfaces)
+    {
+        if (!includeInterfaces)
+        {
+            return InheritsFromOrEquals(type, baseType);
+        }
+
+        return type.GetBaseTypesAndThis().Concat(type.AllInterfaces).Contains(baseType, SymbolEqualityComparer.Default);
+    }
+
+    public static bool InheritsFromOrEquals(this ITypeSymbol type, ITypeSymbol baseType)
+    {
+        return type.GetBaseTypesAndThis().Contains(baseType, SymbolEqualityComparer.Default);
+    }
+
+
+    public static IEnumerable<ITypeSymbol> GetBaseTypesAndThis(this ITypeSymbol? type)
+    {
+        var current = type;
+        while (current != null)
+        {
+            yield return current;
+            current = current.BaseType;
+        }
+    }
+
 }

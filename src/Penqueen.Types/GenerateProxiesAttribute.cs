@@ -1,6 +1,6 @@
 ﻿namespace Penqueen.Types
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class GenerateProxiesAttribute : Attribute
     {
         public bool CustomProxies { get; set; } = false;
