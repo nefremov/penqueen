@@ -12,12 +12,9 @@ public class DefaultEntityPartialClassGenerator : CodeGenerators.Entities.Genera
     private readonly List<IPropertySymbol> _simpleFields = new(10);
 
     protected override IEnumerable<string> DefaultNamespaces => [
-        "System.Collections.Generic",
         "Constructor.Domain.Common",
-        "Constructor.Platform.Common",
-        "Constructor.Platform.Security",
-        "Constructor.Platform.Validation",
-        "Constructor.Platform.Validation.Rules"
+        "Constructor.Platform.Validation.Rules",
+        "System.Security"
     ];
 
 
@@ -40,30 +37,30 @@ public class DefaultEntityPartialClassGenerator : CodeGenerators.Entities.Genera
         var name = property.Name;
 
 
-        sb.Append("    public ").Append(type).Append(nullable ? "? " : " ").Append("Set").Append(name).Append("(NewOperationContext operationContext, ").Append(type).Append(nullable ? "? " : " ").Append("value)").AppendLine();
+        sb.Append("    public ").Append(EntityClassDescriptor.EntityType.Name).Append(" Set").Append(name).Append("(NewOperationContext operationContext, ").Append(type).Append(nullable ? "? " : " ").Append("value)").AppendLine();
         sb.Append("    {").AppendLine();
-        sb.Append("    if (EntityRules == null || !EntityRules.Update.Accept(this, operationContext))").AppendLine();
-        sb.Append("    {").AppendLine();
-        sb.Append("        throw new SecurityException();").AppendLine();
-        sb.Append("    }").AppendLine();
-        sb.AppendLine();
-        sb.Append("    if (EntityRules != null && EntityRules.PropertyRules.TryGetValue(").Append(name).Append(", out var validationRules))").AppendLine();
-        sb.Append("    {").AppendLine();
-        sb.Append("        value = ((PropertyRuleSet<").Append(EntityClassDescriptor.EntityType.ToDisplayString()).Append(", ").Append(type).Append(nullable ? "?>" : ">").Append(")validationRules).Validate(entity, value, operationContext.Validation);").AppendLine();
-        sb.Append("        if (!operationContext.Validation.IsValid)").AppendLine();
+        sb.Append("        if (EntityRules == null || !EntityRules.Update.Accept(this, operationContext))").AppendLine();
         sb.Append("        {").AppendLine();
-        sb.Append("           return entity;").AppendLine();
+        sb.Append("            throw new SecurityException();").AppendLine();
         sb.Append("        }").AppendLine();
+        sb.AppendLine();
+        sb.Append("        if (EntityRules != null && EntityRules.PropertyRules.TryGetValue(").Append(name).Append(", out var validationRules))").AppendLine();
+        sb.Append("        {").AppendLine();
+        sb.Append("            value = ((PropertyRuleSet<").Append(EntityClassDescriptor.EntityType.ToDisplayString()).Append(", ").Append(type).Append(nullable ? "?>" : ">").Append(")validationRules).Validate(entity, value, operationContext.Validation);").AppendLine();
+        sb.Append("            if (!operationContext.Validation.IsValid)").AppendLine();
+        sb.Append("            {").AppendLine();
+        sb.Append("               return this;").AppendLine();
+        sb.Append("            }").AppendLine();
+        sb.Append("        }").AppendLine();
+        sb.Append("        ").Append(name).Append(" = value;").AppendLine();
+        sb.AppendLine();
+        sb.Append("        Modified = operationContext.DateTimeService.UtcNow;").AppendLine();
+        sb.Append("        ModifiedByUserId = operationContext.UserId;").AppendLine();
+        sb.Append("        ModifiedOnBehalfOfUserId = operationContext.OnBehalfOfUserId;").AppendLine();
+        sb.Append("        ModifiedByApplicationId = operationContext.ApplicationId;").AppendLine();
+        sb.AppendLine();
+        sb.Append("        return this;").AppendLine();
         sb.Append("    }").AppendLine();
-        sb.Append("    ").Append(name).Append(" = value;").AppendLine();
-        sb.AppendLine();
-        sb.Append("    entity.Modified = operationContext.DateTimeService.UtcNow;").AppendLine();
-        sb.Append("    entity.ModifiedByUserId = operationContext.UserId;").AppendLine();
-        sb.Append("    entity.ModifiedOnBehalfOfUserId = operationContext.OnBehalfOfUserId;").AppendLine();
-        sb.Append("    entity.ModifiedByApplicationId = operationContext.ApplicationId;").AppendLine();
-        sb.AppendLine();
-        sb.Append("    return entity;").AppendLine();
-        sb.Append("}").AppendLine();
 
         return sb;
     }
