@@ -24,7 +24,7 @@ public class DefaultEntityCollectionInterfaceGenerator : IEntityCollectionInterf
         => sb.Append("namespace ").Append(_entityClassDescriptor.EntityType.ContainingNamespace.ToDisplayString()).AppendLine(";");
 
     protected virtual StringBuilder GenerateInterfaceDeclaration(StringBuilder sb)
-        => sb.WriteTypeAccessibility(_entityClassDescriptor.EntityType.DeclaredAccessibility).Append("interface I").Append(_entityClassDescriptor.EntityType.Name).AppendLine(">");
+        => sb.WriteTypeAccessibility(_entityClassDescriptor.EntityType.DeclaredAccessibility).Append("interface I").Append(_entityClassDescriptor.EntityType.Name).Append("Collection : IQueryableCollection<").Append(_entityClassDescriptor.EntityType.Name).AppendLine(">");
 
     protected virtual StringBuilder GenerateFactoryMethods(StringBuilder sb)
     {
@@ -46,7 +46,6 @@ public class DefaultEntityCollectionInterfaceGenerator : IEntityCollectionInterf
     {
         var sb = new StringBuilder();
         sb.WriteUsings(DefaultNamespaces);
-        sb.AppendLine();
         GenerateNamespace(sb);
         sb.AppendLine();
         GenerateInterfaceDeclaration(sb);

@@ -17,7 +17,7 @@ public class DefaultEntityPartialClassGenerator(EntityClassDescriptor entityClas
         => sb.Append("namespace ").Append(EntityClassDescriptor.EntityType.ContainingNamespace.ToDisplayString()).AppendLine(";");
 
     protected virtual StringBuilder GenerateClassDeclaration(StringBuilder sb)
-        => sb.WriteTypeAccessibility(EntityClassDescriptor.EntityType.DeclaredAccessibility).Append("partial class ").Append(EntityClassDescriptor.EntityType.Name);
+        => sb.WriteTypeAccessibility(EntityClassDescriptor.EntityType.DeclaredAccessibility).Append("partial class ").AppendLine(EntityClassDescriptor.EntityType.Name);
 
     protected virtual StringBuilder GenerateCollectionBackingFields(StringBuilder sb)
     {
@@ -38,7 +38,6 @@ public class DefaultEntityPartialClassGenerator(EntityClassDescriptor entityClas
     {
         var sb = new StringBuilder();
         sb.WriteUsings(DefaultNamespaces);
-        sb.AppendLine();
         GenerateNamespace(sb);
         sb.AppendLine();
         GenerateClassDeclaration(sb);

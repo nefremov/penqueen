@@ -198,7 +198,7 @@ public static class StringBuilderExtensions
         }*/
             if (index != constructor.Parameters.Length - 1)
             {
-                builder.AppendLine(", ");
+                builder.AppendLine(",");
             }
         }
 
